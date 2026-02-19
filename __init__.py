@@ -4,7 +4,7 @@ Custom node for calling the Anthropic Claude API with text and image inputs.
 © 2026 Created with ❤️ by Alex Munteanu | alexmunteanu.com
 """
 
-VERSION = "1.4.2"
+VERSION = "1.4.3"
 
 WEB_DIRECTORY = "./js"
 

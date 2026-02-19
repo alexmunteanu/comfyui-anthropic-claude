@@ -28,7 +28,7 @@ Images are automatically resized so neither dimension exceeds `max_image_size` (
 
 ### template (optional)
 
-Dropdown with 21 built-in instruction templates and any user-saved templates. Selecting a template loads its content into the instructions field.
+Dropdown with 31 built-in instruction templates and any user-saved templates. Selecting a template loads its content into the instructions field.
 
 Templates come in two categories:
 
@@ -40,31 +40,41 @@ Templates come in two categories:
 
 | Template | Target |
 |----------|--------|
-| Nano Banana Pro | Nano Banana Pro (Gemini 3 Pro Image) |
-| Seedream 4.0 / 4.5 | Seedream image generation |
-| Qwen Image | Qwen image generation |
-| Qwen Image Edit | Qwen image editing |
+| FLUX | FLUX image generation |
 | Grok | Grok image generation |
-| Seedance 2.0 | Seedance 2.0 video generation |
-| Seedance 1.0 & 1.5 | Seedance 1.0/1.5 video generation |
+| Ideogram 3 | Ideogram 3 image generation |
+| Kling 2.1 & 2.5 | Kling 2.1/2.5 video generation |
+| Kling 2.6 | Kling 2.6 video generation (with audio) |
+| Kling 2.6 Motion Control | Kling 2.6 motion-controlled video |
 | Kling V3 | Kling V3 video generation |
 | Kling O1 | Kling O1 video editing |
 | Kling V3 Omni | Kling V3 Omni multimodal |
+| LTX 2 Pro | LTX video generation |
+| Luma Ray 2 & 3 | Luma Ray 2/3 video generation |
 | Minimax | Minimax video generation |
+| Nano Banana Pro | Nano Banana Pro (Gemini 3 Pro Image) |
+| Pika 2.2 & 2.5 | Pika video generation |
+| Qwen Image | Qwen image generation |
+| Runway Gen-4 & 4.5 | Runway Gen-4/4.5 video generation |
+| Seedance 1.0 & 1.5 | Seedance 1.0/1.5 video generation |
+| Seedance 2.0 | Seedance 2.0 video generation |
+| Seedream 4.0 / 4.5 | Seedream image generation |
+| Sora 2 & 2 Pro | Sora video generation |
+| Veo 3 & 3.1 | Veo video generation |
 | Wan 2.1 & 2.2 | Wan 2.1/2.2 video generation |
 | Wan 2.5 & 2.6 | Wan 2.5/2.6 video generation |
-| Veo 3 & 3.1 | Veo video generation |
-| Sora 2 & 2 Pro | Sora video generation |
-| LTX 2 Pro | LTX video generation |
 
 #### Editing Templates
 
 | Template | Target |
 |----------|--------|
-| Nano Banana Pro Edit | Nano Banana Pro image editing |
-| Seedream Edit | Seedream image editing |
+| FLUX Kontext Edit | FLUX Kontext image editing |
 | Grok Edit | Grok image editing |
+| Nano Banana Pro Edit | Nano Banana Pro image editing |
+| Qwen Image Edit | Qwen image editing |
+| Runway Aleph Edit | Runway Aleph video editing |
 | Seedance 2.0 Edit | Seedance 2.0 video editing |
+| Seedream Edit | Seedream image editing |
 | Sora 2 Edit | Sora video editing |
 
 All templates were verified against each model's official documentation.

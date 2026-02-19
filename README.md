@@ -7,7 +7,7 @@ A ComfyUI node that calls the Anthropic Claude API directly from your workflow. 
 ## What It Does
 
 - **Text and vision**: send text prompts with optional images to any Claude model
-- **21 built-in templates**: pre-written instructions for popular AI video/image models (generation and editing)
+- **31 built-in templates**: pre-written instructions for popular AI video/image models (generation and editing)
 - **Save your own templates**: create and reuse custom instruction sets
 - **Execution history**: searchable log of every run with cost tracking, favorites, and one-click settings restore
 - **Model selection**: auto-fetched from the Anthropic API

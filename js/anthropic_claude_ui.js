@@ -86,6 +86,174 @@ function checkStartupWarnings() {
         .catch(function () {});
 }
 
+/* -----------------------------------------------------------------------
+ * API Error Modal
+ * ----------------------------------------------------------------------- */
+
+var _apiErrorModalShown = false;
+var _apiErrorOverlay = null;
+var _apiErrorMsgEl = null;
+var _apiErrorRetryBtn = null;
+var _apiErrorKeyInput = null;
+var _apiErrorNode = null;
+var _apiRetrySuccessTime = 0;
+
+var _apiErrorMessages = {
+    auth_error: "Your Anthropic API key is invalid or expired.\nCheck your CLAUDE_API_KEY environment variable.",
+    missing_key: "No API key found.\nSet the CLAUDE_API_KEY environment variable.",
+    missing_package: "The 'anthropic' package is not installed.\nRun: pip install anthropic",
+    connection_error: "Cannot reach the Anthropic API.\nCheck your internet connection.",
+    rate_limit: "You've been rate limited by the Anthropic API.\nWait a moment and try again.",
+    unknown: "Something went wrong connecting to the Anthropic API."
+};
+
+function _createApiErrorModal() {
+    var overlay = document.createElement("div");
+    overlay.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:10000;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;";
+
+    var box = document.createElement("div");
+    box.style.cssText = "background:#1a1a2e;border:1px solid #334155;border-radius:10px;padding:28px 32px;max-width:480px;width:90%;color:#e2e8f0;box-shadow:0 20px 60px rgba(0,0,0,0.5);";
+
+    var title = document.createElement("div");
+    title.style.cssText = "font-size:16px;font-weight:600;margin-bottom:16px;color:#f87171;";
+    title.textContent = "API Connection Issue";
+
+    var msg = document.createElement("div");
+    msg.style.cssText = "font-size:13px;line-height:1.6;color:#94a3b8;margin-bottom:12px;white-space:pre-line;";
+
+    var keyLabel = document.createElement("div");
+    keyLabel.style.cssText = "font-size:12px;color:#94a3b8;margin-bottom:4px;";
+    keyLabel.textContent = "API Key (paste to update without restarting):";
+
+    var keyInput = document.createElement("input");
+    keyInput.type = "password";
+    keyInput.placeholder = "sk-ant-...";
+    keyInput.style.cssText = "width:100%;box-sizing:border-box;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:5px;color:#e2e8f0;font-size:13px;font-family:monospace;outline:none;margin-bottom:16px;";
+    keyInput.onfocus = function () { keyInput.style.borderColor = "#2563eb"; };
+    keyInput.onblur = function () { keyInput.style.borderColor = "#334155"; };
+    keyInput.onkeydown = function (e) { if (e.key === "Enter") _retryApiConnection(); };
+
+    var btnRow = document.createElement("div");
+    btnRow.style.cssText = "display:flex;justify-content:flex-end;gap:8px;";
+
+    var dismissBtn = document.createElement("button");
+    dismissBtn.textContent = "Dismiss";
+    dismissBtn.style.cssText = "padding:8px 20px;background:#334155;border:none;border-radius:5px;color:#94a3b8;cursor:pointer;font-size:13px;";
+    dismissBtn.onclick = function () { _closeApiErrorModal(); };
+
+    var retryBtn = document.createElement("button");
+    retryBtn.textContent = "Retry Connection";
+    retryBtn.style.cssText = "padding:8px 20px;background:#2563eb;border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:13px;";
+    retryBtn.onclick = _retryApiConnection;
+
+    btnRow.appendChild(dismissBtn);
+    btnRow.appendChild(retryBtn);
+    box.appendChild(title);
+    box.appendChild(msg);
+    box.appendChild(keyLabel);
+    box.appendChild(keyInput);
+    box.appendChild(btnRow);
+    overlay.appendChild(box);
+
+    overlay.onclick = function (e) { if (e.target === overlay) _closeApiErrorModal(); };
+
+    _apiErrorOverlay = overlay;
+    _apiErrorMsgEl = msg;
+    _apiErrorRetryBtn = retryBtn;
+    _apiErrorKeyInput = keyInput;
+    return overlay;
+}
+
+function _showApiErrorModal(info, node) {
+    if (Date.now() - _apiRetrySuccessTime < 5000) return;
+    if (!_apiErrorOverlay) _createApiErrorModal();
+    var message = _apiErrorMessages[info.error_type] || info.error || _apiErrorMessages.unknown;
+    _apiErrorMsgEl.textContent = message;
+    if (node) _apiErrorNode = node;
+    if (!_apiErrorOverlay.parentNode) {
+        document.body.appendChild(_apiErrorOverlay);
+    }
+}
+
+function _closeApiErrorModal() {
+    if (_apiErrorOverlay && _apiErrorOverlay.parentNode) {
+        _apiErrorOverlay.parentNode.removeChild(_apiErrorOverlay);
+    }
+}
+
+function _retryApiConnection() {
+    _apiErrorRetryBtn.textContent = "Retrying...";
+    _apiErrorRetryBtn.disabled = true;
+    var body = {};
+    if (_apiErrorKeyInput && _apiErrorKeyInput.value.trim()) {
+        body.api_key = _apiErrorKeyInput.value.trim();
+    }
+    fetch("/anthropic_claude/refresh_models", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+    })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            _apiErrorRetryBtn.textContent = "Retry Connection";
+            _apiErrorRetryBtn.disabled = false;
+            if (d.ok) {
+                if (d.models && d.models.length && _apiErrorNode) {
+                    var modelWidget = null;
+                    for (var i = 0; i < _apiErrorNode.widgets.length; i++) {
+                        if (_apiErrorNode.widgets[i].name === "model") {
+                            modelWidget = _apiErrorNode.widgets[i];
+                            break;
+                        }
+                    }
+                    if (modelWidget) {
+                        modelWidget.options.values = d.models;
+                        if (d.models.indexOf(modelWidget.value) === -1) {
+                            var sonnet = null;
+                            for (var j = 0; j < d.models.length; j++) {
+                                if (d.models[j].indexOf("Sonnet") === 0) {
+                                    sonnet = d.models[j];
+                                    break;
+                                }
+                            }
+                            modelWidget.value = sonnet || d.models[0];
+                        }
+                    }
+                }
+                if (_apiErrorKeyInput) _apiErrorKeyInput.value = "";
+                if (_apiErrorNode && _apiErrorNode._acErrorLine) {
+                    _apiErrorNode._acErrorLine.style.display = "none";
+                    _apiErrorNode._errorText = null;
+                }
+                _apiRetrySuccessTime = Date.now();
+                _apiErrorModalShown = false;
+                _closeApiErrorModal();
+                showToast("API connected. Models refreshed.", false);
+            } else {
+                var msg = _apiErrorMessages[d.error.error_type] || d.error.error || _apiErrorMessages.unknown;
+                _apiErrorMsgEl.textContent = msg;
+            }
+        })
+        .catch(function () {
+            _apiErrorRetryBtn.textContent = "Retry Connection";
+            _apiErrorRetryBtn.disabled = false;
+            _apiErrorMsgEl.textContent = "Network error. Check your connection.";
+        });
+}
+
+function _checkApiHealth(node) {
+    if (_apiErrorModalShown) return;
+    fetch("/anthropic_claude/api_health")
+        .then(function (r) { return r.json(); })
+        .then(function (info) {
+            if (!info.ok) {
+                _apiErrorModalShown = true;
+                _showApiErrorModal(info, node);
+            }
+        })
+        .catch(function () {});
+}
+
 function _copyToClipboard(text) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(function () {
@@ -976,19 +1144,29 @@ app.registerExtension({
                     if (this.widgets[w].name === "prompt") promptWidget = this.widgets[w];
                 }
 
-                // V3 API only supports bool for control_after_generate,
-                // so the frontend defaults to "randomize". Override to "fixed".
+                var seedWidget = null;
                 for (var w = 0; w < this.widgets.length; w++) {
-                    if (this.widgets[w].name === "seed" && w + 1 < this.widgets.length) {
-                        var ctrl = this.widgets[w + 1];
-                        if (ctrl.options && ctrl.options.values &&
-                            ctrl.options.values.indexOf("fixed") !== -1 &&
-                            ctrl.options.values.indexOf("randomize") !== -1) {
-                            ctrl.value = "fixed";
+                    if (this.widgets[w].name === "seed") {
+                        seedWidget = this.widgets[w];
+                        if (w + 1 < this.widgets.length) {
+                            var ctrl = this.widgets[w + 1];
+                            if (ctrl.options && ctrl.options.values &&
+                                ctrl.options.values.indexOf("fixed") !== -1 &&
+                                ctrl.options.values.indexOf("randomize") !== -1) {
+                                ctrl.value = "fixed";
+                            }
                         }
                         break;
                     }
                 }
+
+                var seedRef = seedWidget;
+                this.addWidget("button", "Randomize Seed", null, function () {
+                    if (seedRef) {
+                        seedRef.value = Math.floor(Math.random() * 9007199254740992);
+                        node.setDirtyCanvas(true, true);
+                    }
+                });
 
                 function refreshTemplateList(selectName) {
                     if (!templateWidget) return;
@@ -1095,7 +1273,6 @@ app.registerExtension({
                     hideOnZoom: false,
                     serialize: false
                 });
-                // Fixed-height footer: Classic uses computeSize, Nodes 2.0 uses min-content row
                 delete footerWidget.computeLayoutSize;
                 footerWidget.computeSize = function () {
                     var h = FOOTER_H - 4;
@@ -1115,6 +1292,7 @@ app.registerExtension({
                 syncDisableState(this);
                 checkStartupWarnings();
                 startApiStatusPolling();
+                _checkApiHealth(this);
             };
 
             var onConnectionsChange = proto.onConnectionsChange;
@@ -1142,6 +1320,14 @@ app.registerExtension({
                     }
                     if (output.error && output.error[0]) {
                         this._errorText = output.error[0];
+                        var errLower = this._errorText.toLowerCase();
+                        if (errLower.indexOf("invalid api key") !== -1) {
+                            _showApiErrorModal({error_type: "auth_error"}, this);
+                        } else if (errLower.indexOf("rate limit") !== -1) {
+                            _showApiErrorModal({error_type: "rate_limit", error: "You've been rate limited by the Anthropic API. Wait a moment and try again."}, this);
+                        } else if (errLower.indexOf("claude_api_key") !== -1) {
+                            _showApiErrorModal({error_type: "missing_key"}, this);
+                        }
                     } else {
                         this._errorText = null;
                     }

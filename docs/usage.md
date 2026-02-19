@@ -8,17 +8,15 @@ The text you're sending to Claude. Multiline. This is the main input.
 
 ### model (required)
 
-Dropdown of available Claude models. The list is fetched from the Anthropic API when ComfyUI starts (cached for 1 hour). If the API is unreachable or the key isn't set, it falls back to a built-in list and shows a toast notification.
+Dropdown of available Claude models. The list is fetched from the Anthropic API when ComfyUI starts (cached for 1 hour). If the API is unreachable or the key isn't set, it falls back to a built-in list and shows an API Connection Issue modal.
 
-Default: Sonnet 4.5.
+Default: latest Sonnet version available.
 
 ### seed (required)
 
-Controls response caching. When you keep the same seed and don't change any other input, the node returns the cached response without making an API call. Change the seed (or set it to randomize) to force a new API call.
+Controls response caching. When you keep the same seed and don't change any other input, the node returns the cached response without making an API call. This saves money during iterative workflows where you're changing downstream nodes but not the prompt itself. Change the seed (or set it to randomize) to force a new API call.
 
-Default behavior: seed is set to "fixed" mode, so re-running the workflow reuses the cached response. Switch to "randomize" in the control widget to get a fresh response every run.
-
-This saves money during iterative workflows where you're changing downstream nodes but not the prompt itself.
+The **Randomize Seed** button generates a random seed with one click.
 
 ### images (optional)
 
@@ -84,11 +82,6 @@ The template dropdown is disabled when the instructions input is connected to an
 ### instructions (optional)
 
 System-level instructions that guide Claude's behavior. This is the `system` parameter in the API call.
-
-Priority order:
-1. If another node is connected to the instructions input, that value is used
-2. If not connected, the selected template content is used
-3. If template is "None" and nothing is connected, no system instructions are sent
 
 ### temperature (optional)
 
@@ -235,4 +228,6 @@ Input and output token counts, shown on the right side of the footer after each 
 
 If something goes wrong (bad API key, rate limit, empty prompt), the error message appears in red in the node footer and is also returned as the response output text.
 
-Startup errors (like failing to fetch the model list) appear as red toast notifications in the bottom-right corner of the ComfyUI window.
+For API connectivity issues (invalid key, missing key, network errors), a modal dialog appears with a clear message, an input field to paste a corrected API key, and a Retry Connection button. A successful retry clears the footer error and refreshes the model list without restarting ComfyUI.
+
+Startup errors (like failing to fetch the model list) appear as both the modal and red toast notifications in the bottom-right corner of the ComfyUI window.

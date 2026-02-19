@@ -55,6 +55,8 @@ Then `source ~/.bashrc` and restart ComfyUI.
 
 Get your API key at [platform.claude.com](https://platform.claude.com/).
 
+**No restart needed?** If you forgot to set the key before starting ComfyUI (or set it wrong), the node shows an API Connection Issue modal. Paste your key directly into the modal's input field and click Retry Connection. The node picks it up immediately, no restart required.
+
 ## 3. First Run
 
 1. Restart ComfyUI (so it picks up the new node and env var)
@@ -66,6 +68,6 @@ The footer also shows a colored dot for the Claude API status. Green means every
 
 Every execution is saved to history automatically. Click the **History** button on the node to browse past runs, search by keyword, or restore previous settings.
 
-If the model list can't be fetched at startup (no API key, network issue), you'll see a red toast notification and the dropdown falls back to a built-in list. The node still works fine.
+If the model list can't be fetched at startup (no API key, network issue), an API Connection Issue modal appears with a clear explanation and a Retry button. You can paste your API key directly in the modal to fix it without restarting.
 
 For all inputs, templates, and advanced features, see the [Usage Guide](usage.md).

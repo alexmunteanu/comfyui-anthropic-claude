@@ -1,6 +1,6 @@
 # Anthropic Claude for ComfyUI
 
-A ComfyUI node that calls the Anthropic Claude API directly from your workflow. Send text prompts, attach images for vision analysis, use instruction templates, and get responses with cost tracking, all without leaving ComfyUI.
+A ComfyUI node that calls the Anthropic Claude API directly from your workflow. Send text prompts, attach images for vision analysis, use instruction templates, and get responses with cost tracking.
 
 ![anthropic_claude](./node.png)
 
@@ -15,15 +15,16 @@ A ComfyUI node that calls the Anthropic Claude API directly from your workflow. 
 - **Cost tracking**: token usage and USD cost after every run
 - **Live API status**: colored dot in the footer shows Claude API health in real time
 - **Seed-based caching**: fixed seed reuses the cached response, randomize forces a new one
+- **API error recovery**: if the API key is missing or invalid, a modal lets you paste a new key and retry without restarting
 
 ## Install
 
 Open **ComfyUI Manager**, search for "Anthropic Claude", and install.
 
-Manual install and full setup: [Getting Started](getting-started.md)
+Manual install and full setup: [Getting Started](docs/getting-started.md)
 
 ## Links
 
-- [Getting Started](getting-started.md): install, API key setup, first run
-- [Usage Guide](usage.md): all inputs, templates, history, vision, extended thinking, caching
-- [Troubleshooting](troubleshooting.md): common errors and fixes
+- [Getting Started](docs/getting-started.md): install, API key setup, first run
+- [Usage Guide](docs/usage.md): all inputs, templates, history, vision, extended thinking, caching
+- [Troubleshooting](docs/troubleshooting.md): common errors and fixes

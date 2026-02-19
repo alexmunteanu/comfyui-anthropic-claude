@@ -4,7 +4,7 @@ Custom node for calling the Anthropic Claude API with text and image inputs.
 © 2026 Created with ❤️ by Alex Munteanu | alexmunteanu.com
 """
 
-VERSION = "1.5.1"
+VERSION = "1.5.9"
 
 WEB_DIRECTORY = "./js"
 
@@ -15,6 +15,8 @@ from .anthropic_claude_node import (
     _load_template,
     _list_all_template_names,
     _startup_warnings,
+    _api_error,
+    _refresh_models,
 )
 
 from . import history_manager
@@ -60,6 +62,27 @@ try:
         warnings = list(_startup_warnings)
         _startup_warnings.clear()
         return web.json_response({"warnings": warnings})
+
+    @PromptServer.instance.routes.get("/anthropic_claude/api_health")
+    async def api_health(request):
+        return web.json_response(_api_error)
+
+    @PromptServer.instance.routes.post("/anthropic_claude/refresh_models")
+    async def refresh_models(request):
+        import os
+        try:
+            data = await request.json()
+        except Exception:
+            data = {}
+        api_key = data.get("api_key", "").strip() if data else ""
+        if api_key:
+            os.environ["CLAUDE_API_KEY"] = api_key
+        display_names = _refresh_models()
+        return web.json_response({
+            "ok": _api_error["ok"],
+            "models": display_names,
+            "error": _api_error,
+        })
 
     # -- History routes --
 

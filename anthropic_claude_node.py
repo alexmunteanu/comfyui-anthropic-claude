@@ -136,6 +136,7 @@ def _format_cost(cost):
 
 FALLBACK_MODELS = [
     "claude-opus-4-6",
+    "claude-sonnet-4-6",
     "claude-sonnet-4-5",
     "claude-haiku-4-5",
     "claude-opus-4-5",
@@ -148,6 +149,7 @@ FALLBACK_MODELS = [
 _cached_models = None
 _models_fetch_time = 0
 _startup_warnings = []
+_api_error = {"ok": True, "error": "", "error_type": ""}
 
 _display_to_id = {}
 _id_to_display = {}
@@ -220,10 +222,12 @@ def _fetch_models():
         return _cached_models
 
     if not ANTHROPIC_AVAILABLE:
+        _api_error.update(ok=False, error="The 'anthropic' package is not installed. Run: pip install anthropic", error_type="missing_package")
         return FALLBACK_MODELS
 
     api_key = os.environ.get("CLAUDE_API_KEY", "")
     if not api_key:
+        _api_error.update(ok=False, error="No API key found. Set the CLAUDE_API_KEY environment variable and restart ComfyUI.", error_type="missing_key")
         return FALLBACK_MODELS
 
     try:
@@ -233,11 +237,29 @@ def _fetch_models():
         if models:
             _cached_models = models
             _models_fetch_time = time.time()
+            _api_error.update(ok=True, error="", error_type="")
             return models
+    except anthropic.AuthenticationError:
+        _api_error.update(ok=False, error="Your API key is invalid or expired. Check your CLAUDE_API_KEY environment variable.", error_type="auth_error")
+        _startup_warnings.append("Authentication failed: invalid API key")
+    except (anthropic.APIConnectionError, anthropic.APITimeoutError) as e:
+        _api_error.update(ok=False, error="Cannot reach the Anthropic API. Check your internet connection.", error_type="connection_error")
+        _startup_warnings.append(f"Failed to fetch models: {e}")
     except Exception as e:
+        _api_error.update(ok=False, error=f"Failed to connect to the Anthropic API: {e}", error_type="unknown")
         _startup_warnings.append(f"Failed to fetch models: {e}")
 
     return FALLBACK_MODELS
+
+
+def _refresh_models():
+    """Force re-fetch models from API. Returns (display_names, api_error)."""
+    global _cached_models, _models_fetch_time
+    _cached_models = None
+    _models_fetch_time = 0
+    model_ids = _fetch_models()
+    display_names = _build_model_map(model_ids)
+    return display_names
 
 
 # ---------------------------------------------------------------------------
@@ -379,9 +401,9 @@ class AnthropicClaudeNode(io.ComfyNode):
                 ),
                 io.Int.Input(
                     "seed",
-                    default=2847593160,
+                    default=7392041856130974,
                     min=0,
-                    max=0xFFFFFFFF,
+                    max=9007199254740991,
                     control_after_generate=True,
                     tooltip="Controls caching. Fixed = reuse cached result (no API call). Randomize = new API call each run.",
                 ),

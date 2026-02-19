@@ -1,7 +1,7 @@
 [project]
 name = "anthropic-claude"
 description = "ComfyUI custom node for calling the Anthropic Claude API with text and image inputs."
-version = "1.4.3"
+version = "1.4.4"
 license = { file = "LICENSE.md" }
 requires-python = ">=3.10"
 dependencies = ["anthropic>=0.40.0"]
@@ -12,5 +12,5 @@ Repository = "https://github.com/alexmunteanu/comfyui-anthropic-claude"
 [tool.comfy]
 PublisherId = "alexmunteanu"
 DisplayName = "Anthropic Claude"
-Icon = "icon.png"
-Banner = "banner.png"
+Icon = "https://raw.githubusercontent.com/alexmunteanu/comfyui-anthropic-claude/main/icon.png"
+Banner = "https://raw.githubusercontent.com/alexmunteanu/comfyui-anthropic-claude/main/banner.png"

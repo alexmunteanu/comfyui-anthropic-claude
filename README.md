@@ -1,6 +1,6 @@
 # Anthropic Claude for ComfyUI
 
-A ComfyUI node that calls the Anthropic Claude API directly from your workflow. Send text prompts, attach images for vision analysis, use instruction templates, and get responses with cost tracking.
+A ComfyUI node that uses Claude to generate optimized prompts for 25+ image and video models. 31 built-in templates for FLUX, Runway, Kling, Veo, Wan, Luma, Seedance, Qwen, Nano Banana, and others. Save your own templates, track every run with searchable execution history, and monitor costs.
 
 ![anthropic_claude](./node.png)
 

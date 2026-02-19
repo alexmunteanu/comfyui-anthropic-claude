@@ -12,3 +12,5 @@ Repository = "https://github.com/alexmunteanu/comfyui-anthropic-claude"
 [tool.comfy]
 PublisherId = "alexmunteanu"
 DisplayName = "Anthropic Claude"
+Icon = "icon.png"
+Banner = "banner.png"

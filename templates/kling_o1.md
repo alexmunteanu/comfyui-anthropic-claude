@@ -42,81 +42,81 @@ O1 uses @ references to link prompt elements to uploaded media:
 
 ### Add Content
 ```
-Add [describe content to add] from [@Image] to [@Video]
+Add [describe content to add] from @Image to @Video
 ```
 ```
-Add [describe content to add] to [@Video]
+Add [describe content to add] to @Video
 ```
 ```
-Add [@Element] to [@Video]
+Add @Element to @Video
 ```
 ```
-Add [@Element] and [describe content to add] from [@Image] to [@Video]
+Add @Element and [describe content to add] from @Image to @Video
 ```
 
 ### Remove Content
 ```
-Remove [describe content to remove] from [@Video]
+Remove [describe content to remove] from @Video
 ```
 
 ### Change Angle or Composition
 ```
-Generate [another angle/composition, e.g., close-up, wide shot] in [@Video]
+Generate [another angle/composition, e.g., close-up, wide shot] in @Video
 ```
 
 ### Modify Subject
 ```
-Change [describe specified subject] in [@Video] to [describe target subject]
+Change [describe specified subject] in @Video to [describe target subject]
 ```
 ```
-Change [describe specified subject] in [@Video] to [describe target subject] from [@Image]
+Change [describe specified subject] in @Video to [describe target subject] from @Image
 ```
 ```
-Change [describe specified subject] in [@Video] to [@Element]
+Change [describe specified subject] in @Video to @Element
 ```
 
 ### Modify Background
 ```
-Change the background in [@Video] with [describe specified background]
+Change the background in @Video with [describe specified background]
 ```
 ```
-Change the background in [@Video] with [@Image]
+Change the background in @Video with @Image
 ```
 
 ### Localized Modification
 ```
-Change [describe specified content] in [@Video] to [describe target content]
+Change [describe specified content] in @Video to [describe target content]
 ```
 ```
-Change [describe specified content] in [@Video] to [describe target content] from [@Image]
+Change [describe specified content] in @Video to [describe target content] from @Image
 ```
 
 ### Restyle Video
 ```
-Change [@Video] to [style word] style
+Change @Video to [style word] style
 ```
 ```
-Change [@Video] to the style of [@Image1]
+Change @Video to the style of @Image1
 ```
 
 Supported style words: American cartoon, Japanese anime, wool felt, cyberpunk, pixel art, ink wash painting, oil painting, watercolor, clay, figure, Monet-inspired, and more.
 
 ### Recolor Element
 ```
-Change the [item] in the [@Video] to [color]
+Change the [item] in the @Video to [color]
 ```
 ```
-Change the [item] in the [@Video] to [color] from [@Image]
+Change the [item] in the @Video to [color] from @Image
 ```
 
 ### Change Weather/Environment
 ```
-Change [@Video] to [describe weather, like "a rainy day"]
+Change @Video to [describe weather, like "a rainy day"]
 ```
 
 ### Green Screen Keying
 ```
-Change the background in [@Video] to a green screen, and keep [describe content to keep]
+Change the background in @Video to a green screen, and keep [describe content to keep]
 ```
 
 ### Creative Effects
@@ -126,30 +126,30 @@ Add flames, freeze environments, add facial textures, red-eye effects, or reimag
 
 ### Generate Next Shot
 ```
-Based on [@Video], generate the next shot: [describe shot content]
+Based on @Video, generate the next shot: [describe shot content]
 ```
 
 ### Generate Previous Shot
 ```
-Based on [@Video], generate the previous shot: [describe shot content]
+Based on @Video, generate the previous shot: [describe shot content]
 ```
 
 ### Reference Camera Movements
 ```
-Take [@Image] as the start frame. Generate a new video following the camera movement of the [@Video]
+Take @Image as the start frame. Generate a new video following the camera movement of the @Video
 ```
 
 ### Reference Actions
 ```
-Animate the character in [@Image1] with the same motion as the character in the [@Video]
+Animate the character in @Image1 with the same motion as the character in the @Video
 ```
 
 ## Start + End Frames
 ```
-Take [@Image1] as the start frame, [describe changes in subsequent frames]
+Take @Image1 as the start frame, [describe changes in subsequent frames]
 ```
 ```
-Take [@Image1] as the start frame, take [@Image2] as the end frame, [describe changes between start and end frames]
+Take @Image1 as the start frame, take @Image2 as the end frame, [describe changes between start and end frames]
 ```
 End frame only is NOT supported. Start frame is required.
 

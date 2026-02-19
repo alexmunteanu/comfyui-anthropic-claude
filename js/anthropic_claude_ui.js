@@ -1095,7 +1095,7 @@ app.registerExtension({
                     hideOnZoom: false,
                     serialize: false
                 });
-                // Fixed-height footer: delete computeLayoutSize so textareas absorb remaining space
+                // Fixed-height footer: Classic uses computeSize, Nodes 2.0 uses min-content row
                 delete footerWidget.computeLayoutSize;
                 footerWidget.computeSize = function () {
                     var h = FOOTER_H - 4;

@@ -123,43 +123,43 @@ All editing prompt structures are identical to O1. Use these patterns:
 
 ### Add Content
 ```
-Add [describe content] to [@Video]
-Add [@Element] to [@Video]
+Add [describe content] to @Video
+Add @Element to @Video
 ```
 
 ### Remove Content
 ```
-Remove [describe content to remove] from [@Video]
+Remove [describe content to remove] from @Video
 ```
 
 ### Modify Subject
 ```
-Change [describe subject] in [@Video] to [describe target]
-Change [describe subject] in [@Video] to [@Element]
+Change [describe subject] in @Video to [describe target]
+Change [describe subject] in @Video to @Element
 ```
 
 ### Modify Background
 ```
-Change the background in [@Video] with [describe background]
-Change the background in [@Video] with [@Image]
+Change the background in @Video with [describe background]
+Change the background in @Video with @Image
 ```
 
 ### Restyle
 ```
-Change [@Video] to [style word] style
-Change [@Video] to the style of [@Image]
+Change @Video to [style word] style
+Change @Video to the style of @Image
 ```
 
 Style words: American cartoon, Japanese anime, wool felt, cyberpunk, pixel art, ink wash painting, oil painting, watercolor, clay, figure, Monet-inspired, and more.
 
 ### Weather/Environment
 ```
-Change [@Video] to [describe weather]
+Change @Video to [describe weather]
 ```
 
 ### Green Screen
 ```
-Change the background in [@Video] to a green screen, and keep [describe content to keep]
+Change the background in @Video to a green screen, and keep [describe content to keep]
 ```
 
 ### Preservation Language (Critical for Edits)
@@ -172,14 +172,14 @@ Always specify what should NOT change:
 
 ### Generate Next/Previous Shot
 ```
-Based on [@Video], generate the next shot: [describe shot content]
-Based on [@Video], generate the previous shot: [describe shot content]
+Based on @Video, generate the next shot: [describe shot content]
+Based on @Video, generate the previous shot: [describe shot content]
 ```
 
 ### Reference Camera/Actions
 ```
-Take [@Image] as the start frame. Generate a new video following the camera movement of the [@Video]
-Animate the character in [@Image1] with the same motion as the character in the [@Video]
+Take @Image as the start frame. Generate a new video following the camera movement of the @Video
+Animate the character in @Image1 with the same motion as the character in the @Video
 ```
 
 ## Prompt Templates
@@ -208,7 +208,7 @@ Shot 3 ([Xs]): [Shot size], [wide/establishing]. [Ambient audio].
 
 ### Video Edit with Style
 ```
-Change [@Video] to [style] style. Change [subject] to [@Element]. Change the background to [description]. Keep original motion and camera movement.
+Change @Video to [style] style. Change [subject] to @Element. Change the background to [description]. Keep original motion and camera movement.
 ```
 
 ## Automatic Corrections

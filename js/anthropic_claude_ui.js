@@ -4,10 +4,6 @@
  */
 import { app } from "../../scripts/app.js";
 
-/* -----------------------------------------------------------------------
- * Shared UI helpers
- * ----------------------------------------------------------------------- */
-
 function showInputDialog(title, callback) {
     var overlay = document.createElement("div");
     overlay.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;";
@@ -85,10 +81,6 @@ function checkStartupWarnings() {
         })
         .catch(function () {});
 }
-
-/* -----------------------------------------------------------------------
- * API Error Modal
- * ----------------------------------------------------------------------- */
 
 var _apiErrorModalShown = false;
 var _apiErrorOverlay = null;
@@ -273,10 +265,6 @@ function _copyToClipboard(text) {
     }
 }
 
-/* -----------------------------------------------------------------------
- * History Modal
- * ----------------------------------------------------------------------- */
-
 var _histStylesInjected = false;
 var _histOverlay = null;
 var _histCurrentNode = null;
@@ -401,7 +389,6 @@ function _createHistoryModal() {
     var modal = document.createElement("div");
     modal.className = "ach-modal";
 
-    // Header
     var header = document.createElement("div");
     header.className = "ach-header";
     var title = document.createElement("span");
@@ -418,7 +405,6 @@ function _createHistoryModal() {
     header.appendChild(stats);
     header.appendChild(closeBtn);
 
-    // Toolbar
     var toolbar = document.createElement("div");
     toolbar.className = "ach-toolbar";
 
@@ -490,11 +476,9 @@ function _createHistoryModal() {
     toolbar.appendChild(sortSel);
     toolbar.appendChild(favBtn);
 
-    // List
     var list = document.createElement("div");
     list.className = "ach-list";
 
-    // Pagination
     var pagination = document.createElement("div");
     pagination.className = "ach-pagination";
     var prevBtn = document.createElement("button");
@@ -642,7 +626,6 @@ function _renderHistoryEntry(entry) {
     el.className = "ach-entry";
     el.setAttribute("data-path", entry._path);
 
-    // Head row
     var head = document.createElement("div");
     head.className = "ach-entry-head";
 
@@ -711,7 +694,6 @@ function _renderHistoryEntry(entry) {
     };
     head.appendChild(delBtn);
 
-    // Preview
     var preview = document.createElement("div");
     preview.className = "ach-entry-preview";
     var promptPre = document.createElement("div");
@@ -728,7 +710,6 @@ function _renderHistoryEntry(entry) {
     el.appendChild(head);
     el.appendChild(preview);
 
-    // Click to expand
     var clickArea = function (e) {
         if (e.target.tagName === "BUTTON") return;
         var detail = el.querySelector(".ach-detail");
@@ -746,7 +727,6 @@ function _renderHistoryEntry(entry) {
 }
 
 function _expandEntry(path, el) {
-    // Collapse any previously expanded
     var prev = _histEls.list.querySelector(".ach-detail");
     if (prev) prev.parentNode.removeChild(prev);
 
@@ -774,7 +754,6 @@ function _expandEntry(path, el) {
 function _renderDetail(entry, container, path) {
     container.innerHTML = "";
 
-    // Settings row + Load Settings button
     var settings = document.createElement("div");
     settings.className = "ach-detail-settings";
     var settingItems = [
@@ -799,7 +778,6 @@ function _renderDetail(entry, container, path) {
     settings.appendChild(loadBtn);
     container.appendChild(settings);
 
-    // Images
     if (entry.image_paths && entry.image_paths.length > 0) {
         var imgBox = document.createElement("div");
         imgBox.className = "ach-detail-images";
@@ -832,7 +810,6 @@ function _renderDetail(entry, container, path) {
         container.appendChild(imgBox);
     }
 
-    // Prompt
     var promptSec = document.createElement("div");
     promptSec.className = "ach-detail-section";
     var promptLabel = document.createElement("div");
@@ -842,7 +819,6 @@ function _renderDetail(entry, container, path) {
     promptSec.appendChild(_createTextBlock(entry.prompt || "(empty)", entry.prompt || ""));
     container.appendChild(promptSec);
 
-    // Response
     if (entry.response) {
         var respSec = document.createElement("div");
         respSec.className = "ach-detail-section";
@@ -854,7 +830,6 @@ function _renderDetail(entry, container, path) {
         container.appendChild(respSec);
     }
 
-    // Error
     if (entry.error) {
         var errSec = document.createElement("div");
         errSec.className = "ach-detail-section";
@@ -870,7 +845,6 @@ function _renderDetail(entry, container, path) {
         container.appendChild(errSec);
     }
 
-    // Thinking
     if (entry.thinking) {
         var thinkSec = document.createElement("div");
         thinkSec.className = "ach-detail-section ach-detail-thinking collapsed";
@@ -1030,10 +1004,6 @@ function _loadSettings(entry) {
     showToast("Settings loaded from history", false);
 }
 
-/* -----------------------------------------------------------------------
- * API Status Polling
- * ----------------------------------------------------------------------- */
-
 var _apiStatus = "unknown";
 var _statusDots = [];
 var _statusPollingStarted = false;
@@ -1093,10 +1063,6 @@ function startApiStatusPolling() {
     fetchApiStatus();
     setInterval(fetchApiStatus, 60000);
 }
-
-/* -----------------------------------------------------------------------
- * Node Extension
- * ----------------------------------------------------------------------- */
 
 function syncDisableState(node) {
     var instructionsConnected = false;

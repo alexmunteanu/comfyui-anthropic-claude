@@ -1,6 +1,5 @@
 """
-Anthropic Claude Node for ComfyUI (V3 API)
-Provides a node that calls the Anthropic Claude API with text and image inputs.
+Anthropic Claude Node for ComfyUI (V3 API).
 © 2026 Created with ❤️ by Alex Munteanu | alexmunteanu.com
 """
 
@@ -24,10 +23,6 @@ try:
 except ImportError:
     ANTHROPIC_AVAILABLE = False
 
-
-# ---------------------------------------------------------------------------
-# Instruction templates
-# ---------------------------------------------------------------------------
 
 BUILTIN_TEMPLATES = {
     "FLUX": "flux.md",
@@ -54,7 +49,7 @@ BUILTIN_TEMPLATES = {
     "Seedance 1.0 & 1.5": "seedance_1_1-5.md",
     "Seedance 2.0": "seedance_2.md",
     "Seedance 2.0 Edit": "seedance_2_edit.md",
-    "Seedream 4.0 / 4.5": "seedream.md",
+    "Seedream 4.0 & 4.5": "seedream.md",
     "Seedream Edit": "seedream_edit.md",
     "Sora 2 & 2 Pro": "sora.md",
     "Sora 2 Edit": "sora_edit.md",
@@ -97,10 +92,6 @@ def _load_template(name):
     return ""
 
 
-# ---------------------------------------------------------------------------
-# Pricing (USD per 1M tokens: input, output)
-# ---------------------------------------------------------------------------
-
 MODEL_PRICING = [
     ("3-haiku", 0.25, 1.25),
     ("haiku", 1.00, 5.00),
@@ -112,7 +103,6 @@ MODEL_PRICING = [
 
 
 def _calculate_cost(model, input_tokens, output_tokens):
-    """Calculate USD cost based on model and token counts."""
     model_lower = model.lower()
     for pattern, input_price, output_price in MODEL_PRICING:
         if pattern in model_lower:
@@ -122,17 +112,12 @@ def _calculate_cost(model, input_tokens, output_tokens):
 
 
 def _format_cost(cost):
-    """Format cost as dollars or cents."""
     if cost is None:
         return "cost: unknown model"
     if cost < 0.01:
         return f"{cost * 100:.2f}\u00a2"
     return f"${cost:.4f}"
 
-
-# ---------------------------------------------------------------------------
-# Model fetching
-# ---------------------------------------------------------------------------
 
 FALLBACK_MODELS = [
     "claude-opus-4-6",
@@ -156,12 +141,6 @@ _id_to_display = {}
 
 
 def _make_display_name(model_id):
-    """Convert model ID to friendly display name.
-    e.g. 'claude-opus-4-6' -> 'Opus 4.6'
-         'claude-sonnet-4-20250514' -> 'Sonnet 4'
-         'claude-3-5-sonnet-20241022' -> 'Sonnet 3.5'
-         'claude-3-haiku-20240307' -> 'Haiku 3'
-    """
     import re
     name = model_id.lower()
     if name.startswith("claude-"):
@@ -190,7 +169,6 @@ def _make_display_name(model_id):
 
 
 def _build_model_map(model_ids):
-    """Build bidirectional display_name <-> model_id mappings."""
     global _display_to_id, _id_to_display
     _display_to_id = {}
     _id_to_display = {}
@@ -208,14 +186,12 @@ def _build_model_map(model_ids):
 
 
 def _resolve_model(display_or_id):
-    """Resolve a display name or model ID to the actual API model ID."""
     if display_or_id in _display_to_id:
         return _display_to_id[display_or_id]
     return display_or_id
 
 
 def _fetch_models():
-    """Fetch available models from Anthropic API. Falls back to hardcoded list."""
     global _cached_models, _models_fetch_time
 
     if _cached_models and (time.time() - _models_fetch_time < 3600):
@@ -253,7 +229,6 @@ def _fetch_models():
 
 
 def _refresh_models():
-    """Force re-fetch models from API. Returns (display_names, api_error)."""
     global _cached_models, _models_fetch_time
     _cached_models = None
     _models_fetch_time = 0
@@ -262,13 +237,7 @@ def _refresh_models():
     return display_names
 
 
-# ---------------------------------------------------------------------------
-# Image conversion
-# ---------------------------------------------------------------------------
-
 def _tensor_to_base64_images(image_tensor, max_dim=1024):
-    """Convert ComfyUI IMAGE tensor [B,H,W,C] to list of base64 JPEG strings.
-    Images are resized so neither dimension exceeds max_dim."""
     results = []
     if len(image_tensor.shape) == 3:
         image_tensor = image_tensor.unsqueeze(0)
@@ -293,16 +262,8 @@ def _tensor_to_base64_images(image_tensor, max_dim=1024):
     return results
 
 
-# ---------------------------------------------------------------------------
-# Response cache
-# ---------------------------------------------------------------------------
-
 _response_cache = {}
 
-
-# ---------------------------------------------------------------------------
-# Cache key computation
-# ---------------------------------------------------------------------------
 
 def _compute_cache_key(prompt, model, seed, images=None, instructions=None,
                        temperature=1.0, max_tokens=4096,
@@ -324,10 +285,6 @@ def _compute_cache_key(prompt, model, seed, images=None, instructions=None,
         h.update(images.cpu().numpy().tobytes()[:4096])
     return h.hexdigest()
 
-
-# ---------------------------------------------------------------------------
-# History
-# ---------------------------------------------------------------------------
 
 def _try_save_history(prompt, model, seed, template, temperature, max_tokens,
                       extended_thinking, thinking_budget, max_image_size,
@@ -359,12 +316,7 @@ def _try_save_history(prompt, model, seed, template, temperature, max_tokens,
         pass
 
 
-# ---------------------------------------------------------------------------
-# Node class
-# ---------------------------------------------------------------------------
-
 class AnthropicClaudeNode(io.ComfyNode):
-    """ComfyUI node for calling the Anthropic Claude API with text and image inputs."""
 
     @classmethod
     def define_schema(cls):
@@ -510,7 +462,6 @@ class AnthropicClaudeNode(io.ComfyNode):
             instructions = _load_template(template)
         model = _resolve_model(model)
 
-        # -- Validate prerequisites --
         if not ANTHROPIC_AVAILABLE:
             err = "ERROR: 'anthropic' package not installed. Run: pip install anthropic"
             return io.NodeOutput(err, "", ui={"text": [err], "usage": ["N/A"], "error": [err]})
@@ -524,7 +475,6 @@ class AnthropicClaudeNode(io.ComfyNode):
             err = "ERROR: Prompt is empty."
             return io.NodeOutput(err, "", ui={"text": [err], "usage": ["N/A"], "error": [err]})
 
-        # -- Check internal cache --
         cache_key = _compute_cache_key(
             prompt, model, seed, images, instructions,
             temperature, max_tokens, extended_thinking, thinking_budget,
@@ -542,7 +492,6 @@ class AnthropicClaudeNode(io.ComfyNode):
                 "error": [""],
             })
 
-        # -- Build content blocks (images first, then text) --
         content = []
 
         if images is not None:
@@ -561,7 +510,6 @@ class AnthropicClaudeNode(io.ComfyNode):
 
         content.append({"type": "text", "text": prompt})
 
-        # -- Build API kwargs --
         kwargs = {
             "model": model,
             "max_tokens": max_tokens,
@@ -581,7 +529,6 @@ class AnthropicClaudeNode(io.ComfyNode):
         else:
             kwargs["temperature"] = temperature
 
-        # -- Make API call --
         t_start = time.time()
         api_error = None
         message = None
@@ -606,7 +553,6 @@ class AnthropicClaudeNode(io.ComfyNode):
             )
             return io.NodeOutput(api_error, "", ui={"text": [api_error], "usage": ["N/A"], "error": [api_error]})
 
-        # -- Parse response --
         response_text = ""
         thinking_text = ""
 
@@ -622,10 +568,8 @@ class AnthropicClaudeNode(io.ComfyNode):
         cost = _calculate_cost(model, input_tokens, output_tokens)
         cost_str = _format_cost(cost)
 
-        # -- Cache result --
         _response_cache[cache_key] = (response_text, thinking_text, usage_str, cost_str, model)
 
-        # -- Save history --
         _try_save_history(
             prompt, model, seed, template, temperature, max_tokens,
             extended_thinking, thinking_budget, max_image_size,
@@ -633,7 +577,6 @@ class AnthropicClaudeNode(io.ComfyNode):
             cost, cost_str, duration_ms, None, images,
         )
 
-        # -- Return --
         return io.NodeOutput(response_text, thinking_text, ui={
             "text": [response_text],
             "thinking": [thinking_text],
@@ -644,10 +587,6 @@ class AnthropicClaudeNode(io.ComfyNode):
             "error": [""],
         })
 
-
-# ---------------------------------------------------------------------------
-# Extension registration
-# ---------------------------------------------------------------------------
 
 class AnthropicClaudeExtension(ComfyExtension):
     @override

@@ -163,5 +163,56 @@ Before outputting, verify:
 - Concrete visual descriptors throughout
 - No prohibitive commands ("don't," "remove")
 
+## JSON Prompt Format (Veo 3.1)
+
+Veo 3.1 supports structured JSON prompts for precise control over scenes, camera, lighting, and audio. Output a JSON prompt ONLY when the user explicitly asks for JSON format (e.g., "give me a JSON prompt", "use JSON", "structured format").
+
+### JSON Schema
+
+```json
+{
+  "prompt": "Natural language scene description (required)",
+  "style": "cinematic | realistic | artistic | documentary",
+  "camera": {
+    "type": "wide_shot | close_up | medium_shot | extreme_wide | aerial | macro",
+    "movement": "static | pan_left | pan_right | dolly_in | dolly_out | crane | tracking | orbit",
+    "angle": "eye_level | low_angle | high_angle | birds_eye | dutch_angle",
+    "lens": "wide_angle | standard | telephoto | macro | 85mm"
+  },
+  "lighting": "golden_hour | blue_hour | studio | natural | dramatic | neon",
+  "mood": "serene | energetic | mysterious | uplifting | dramatic",
+  "color_palette": "warm | cool | vibrant | muted | monochrome",
+  "quality": "4k | hd",
+  "duration": "5s | 10s | 15s | 20s",
+  "aspect_ratio": "16:9 | 9:16 | 1:1 | 21:9",
+  "audio": {
+    "dialogue": "Character dialogue with tone description",
+    "sfx": "Sound effects description",
+    "ambient": "Background atmosphere",
+    "music": "Score/music description"
+  },
+  "negative_prompt": "Elements to exclude (1-3 max)"
+}
+```
+
+### JSON Rules
+
+- Only `prompt` is required — all other fields are optional with sensible defaults
+- The `prompt` field is still natural language — same rules apply (specific, concrete, film terminology)
+- Camera, lighting, mood values should use the keywords listed above
+- Audio sub-fields map directly to the audio layer rules in this template
+- `negative_prompt` follows the same exclusion rules (descriptive, 1-3 items, no prohibitive commands)
+
+### JSON Automatic Corrections
+
+Apply all standard automatic corrections, PLUS:
+
+1. Missing `prompt` field — always include it with the full scene description
+2. Conflicting camera values — resolve to single coherent setup
+3. Audio fields that duplicate what's in `prompt` — keep in JSON fields only, remove from `prompt` text
+
 ## Response Format
-Output ONLY the optimized prompt. Nothing else. No titles, no headers, no explanations, no markdown formatting.
+
+**Default (no JSON requested):** Output ONLY the optimized natural language prompt. Nothing else. No titles, no headers, no explanations, no markdown formatting.
+
+**JSON requested:** Output ONLY the valid JSON object. No wrapping markdown code fences, no explanations, no commentary — just the raw JSON.

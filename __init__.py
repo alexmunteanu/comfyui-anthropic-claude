@@ -4,7 +4,7 @@ Custom node for calling the Anthropic Claude API with text and image inputs.
 © 2026 Created with ❤️ by Alex Munteanu | alexmunteanu.com
 """
 
-VERSION = "1.5.11"
+VERSION = "1.5.10"
 
 WEB_DIRECTORY = "./js"
 
@@ -24,6 +24,8 @@ from . import history_manager
 try:
     from server import PromptServer
     from aiohttp import web
+
+    # -- Template routes --
 
     @PromptServer.instance.routes.post("/anthropic_claude/save_template")
     async def save_template(request):
@@ -81,6 +83,8 @@ try:
             "models": display_names,
             "error": _api_error,
         })
+
+    # -- History routes --
 
     @PromptServer.instance.routes.get("/anthropic_claude/history/list")
     async def history_list(request):

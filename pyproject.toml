@@ -1,7 +1,7 @@
 [project]
 name = "anthropic-claude"
-description = "A ComfyUI node that uses Claude to generate optimized prompts for 25+ image and video models. 31 built-in templates for FLUX, Runway, Kling, Veo, Wan, Luma, Seedance, Qwen, Nano Banana, and others."
-version = "1.5.10"
+description = "ComfyUI custom node for calling the Anthropic Claude API with text and image inputs."
+version = "1.5.11"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
 dependencies = ["anthropic>=0.40.0"]

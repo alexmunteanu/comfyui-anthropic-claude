@@ -1277,12 +1277,6 @@ app.registerExtension({
                     hideOnZoom: false,
                     serialize: false
                 });
-                // Classic mode: computeSize makes the footer FIXED in
-                // _arrangeWidgets, so textareas (GROWABLE via computeLayoutSize)
-                // absorb remaining space.
-                // Nodes 2.0: deleting computeLayoutSize makes hasLayoutSize
-                // false, so the grid row is min-content (footer doesn't grow).
-                // Textareas get auto rows via shouldExpand("customtext").
                 delete footerWidget.computeLayoutSize;
                 footerWidget.computeSize = function () {
                     var h = FOOTER_H - 4;
@@ -1341,7 +1335,6 @@ app.registerExtension({
                     } else {
                         this._errorText = null;
                     }
-                    // Update DOM footer
                     if (this._acCostSpan) {
                         this._acCostSpan.textContent = this._costText || "---";
                         this._acCostSpan.style.color = this._costText ? "#FFD700" : "#556677";
@@ -1358,7 +1351,6 @@ app.registerExtension({
                             this._acErrorLine.style.display = "none";
                         }
                     }
-                    // Grow node height in classic mode if error line overflows
                     var minSize = this.computeSize();
                     if (this.size[1] < minSize[1]) {
                         this.setSize([this.size[0], minSize[1]]);

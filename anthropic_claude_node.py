@@ -44,6 +44,8 @@ BUILTIN_TEMPLATES = {
     "LTX 2 Pro": "ltx2pro.md",
     "Luma Ray 2 & 3": "luma.md",
     "Minimax": "minimax.md",
+    "Nano Banana 2": "nano_banana_2.md",
+    "Nano Banana 2 Edit": "nano_banana_2_edit.md",
     "Nano Banana Pro": "nano_banana_pro.md",
     "Nano Banana Pro Edit": "nano_banana_pro_edit.md",
     "Pika 2.2 & 2.5": "pika.md",

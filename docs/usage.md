@@ -26,7 +26,7 @@ Images are automatically resized so neither dimension exceeds `max_image_size` (
 
 ### template (optional)
 
-Dropdown with 31 built-in instruction templates and any user-saved templates. Selecting a template loads its content into the instructions field.
+Dropdown with 33 built-in instruction templates and any user-saved templates. Selecting a template loads its content into the instructions field.
 
 Templates come in two categories:
 
@@ -50,13 +50,14 @@ Templates come in two categories:
 | LTX 2 Pro | LTX video generation |
 | Luma Ray 2 & 3 | Luma Ray 2/3 video generation |
 | Minimax | Minimax video generation |
+| Nano Banana 2 | Nano Banana 2 (Gemini 3.1 Flash Image) |
 | Nano Banana Pro | Nano Banana Pro (Gemini 3 Pro Image) |
 | Pika 2.2 & 2.5 | Pika video generation |
 | Qwen Image | Qwen image generation |
 | Runway Gen-4 & 4.5 | Runway Gen-4/4.5 video generation |
 | Seedance 1.0 & 1.5 | Seedance 1.0/1.5 video generation |
 | Seedance 2.0 | Seedance 2.0 video generation |
-| Seedream 4.0 / 4.5 | Seedream image generation |
+| Seedream 4.0 & 4.5 | Seedream image generation |
 | Sora 2 & 2 Pro | Sora video generation |
 | Veo 3 & 3.1 | Veo video generation |
 | Wan 2.1 & 2.2 | Wan 2.1/2.2 video generation |
@@ -68,6 +69,7 @@ Templates come in two categories:
 |----------|--------|
 | FLUX Kontext Edit | FLUX Kontext image editing |
 | Grok Edit | Grok image editing |
+| Nano Banana 2 Edit | Nano Banana 2 image editing |
 | Nano Banana Pro Edit | Nano Banana Pro image editing |
 | Qwen Image Edit | Qwen image editing |
 | Runway Aleph Edit | Runway Aleph video editing |

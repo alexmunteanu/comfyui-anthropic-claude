@@ -35,6 +35,7 @@ BUILTIN_TEMPLATES = {
     "Grok": "grok.md",
     "Grok Edit": "grok_edit.md",
     "Ideogram 3": "ideogram.md",
+    "Kling Avatar 2.0": "kling_avatar.md",
     "Kling 2.1 & 2.5": "kling_2-1_2-5.md",
     "Kling 2.6": "kling_2-6.md",
     "Kling 2.6 Motion Control": "kling_2-6_mc.md",

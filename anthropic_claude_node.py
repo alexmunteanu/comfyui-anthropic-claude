@@ -60,12 +60,15 @@ BUILTIN_TEMPLATES = {
     "Seedance 2.0": "seedance_2.md",
     "Seedance 2.0 Edit": "seedance_2_edit.md",
     "Seedream 4.0 & 4.5": "seedream.md",
+    "Seedream 5.0 Lite": "seedream_5_lite.md",
+    "Seedream 5.0 Lite Edit": "seedream_5_lite_edit.md",
     "Seedream Edit": "seedream_edit.md",
     "Sora 2 & 2 Pro": "sora.md",
     "Sora 2 Edit": "sora_edit.md",
     "Veo 3 & 3.1": "veo.md",
     "Wan 2.1 & 2.2": "wan_2-1_2-2.md",
     "Wan 2.5 & 2.6": "wan_2-5_2-6.md",
+    "Wan 2.7": "wan_2-7.md",
 }
 
 
@@ -265,6 +268,35 @@ def _refresh_models():
     model_ids = _fetch_models()
     display_names = _build_model_map(model_ids)
     return display_names
+
+
+# ---------------------------------------------------------------------------
+# Extended thinking schema detection
+# ---------------------------------------------------------------------------
+
+def _uses_adaptive_thinking(model_id):
+    """Return True if the model requires adaptive thinking schema.
+    Opus 4.7+ rejects manual thinking with a 400 error. Mythos Preview defaults to adaptive.
+    Older models (Opus 4.6, Sonnet 4.6, and earlier) still support manual thinking."""
+    import re
+    mid = model_id.lower()
+    if "mythos" in mid:
+        return True
+    m = re.search(r"claude-(opus|sonnet|haiku)-(\d+)-(\d+)", mid)
+    if m:
+        family, major, minor = m.group(1), int(m.group(2)), int(m.group(3))
+        if family == "opus" and (major > 4 or (major == 4 and minor >= 7)):
+            return True
+    return False
+
+
+def _budget_to_effort(thinking_budget):
+    """Map legacy thinking_budget integer to adaptive effort level."""
+    if thinking_budget <= 8192:
+        return "low"
+    if thinking_budget <= 32768:
+        return "medium"
+    return "high"
 
 
 # ---------------------------------------------------------------------------
@@ -578,11 +610,15 @@ class AnthropicClaudeNode(io.ComfyNode):
 
         if extended_thinking:
             kwargs["temperature"] = 1.0
-            kwargs["max_tokens"] = max_tokens + thinking_budget
-            kwargs["thinking"] = {
-                "type": "enabled",
-                "budget_tokens": thinking_budget,
-            }
+            if _uses_adaptive_thinking(model):
+                kwargs["thinking"] = {"type": "adaptive"}
+                kwargs["extra_body"] = {"output_config": {"effort": _budget_to_effort(thinking_budget)}}
+            else:
+                kwargs["max_tokens"] = max_tokens + thinking_budget
+                kwargs["thinking"] = {
+                    "type": "enabled",
+                    "budget_tokens": thinking_budget,
+                }
         else:
             kwargs["temperature"] = temperature
 
@@ -597,6 +633,19 @@ class AnthropicClaudeNode(io.ComfyNode):
             api_error = "ERROR: Invalid API key. Check your CLAUDE_API_KEY."
         except anthropic.RateLimitError:
             api_error = "ERROR: Rate limited by Anthropic API. Wait and retry."
+        except anthropic.BadRequestError as e:
+            # Retry with adaptive thinking if the model rejected manual thinking
+            if extended_thinking and "thinking.type" in str(e) and "adaptive" in str(e):
+                kwargs.pop("max_tokens", None)
+                kwargs["max_tokens"] = max_tokens
+                kwargs["thinking"] = {"type": "adaptive"}
+                kwargs["extra_body"] = {"output_config": {"effort": _budget_to_effort(thinking_budget)}}
+                try:
+                    message = client.messages.create(**kwargs)
+                except Exception as retry_err:
+                    api_error = f"ERROR: Anthropic API error: {retry_err}"
+            else:
+                api_error = f"ERROR: Anthropic API error: {e}"
         except anthropic.APIError as e:
             api_error = f"ERROR: Anthropic API error: {e}"
         except Exception as e:

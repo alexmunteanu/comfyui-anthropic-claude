@@ -32,6 +32,8 @@ except ImportError:
 BUILTIN_TEMPLATES = {
     "FLUX": "flux.md",
     "FLUX Kontext Edit": "flux_edit.md",
+    "GPT Image 2": "gpt_image_2.md",
+    "GPT Image 2 Edit": "gpt_image_2_edit.md",
     "Grok": "grok.md",
     "Grok Edit": "grok_edit.md",
     "Ideogram 3": "ideogram.md",
@@ -712,6 +714,12 @@ class AnthropicClaudeExtension(ComfyExtension):
 
     @override
     async def on_load(self) -> None:
+        # Node Replacement API — register old→new node ID mappings here
+        # api = ComfyAPI()
+        # await api.node_replacement.register(io.NodeReplace(
+        #     new_node_id="AnthropicClaudeNode",
+        #     old_node_id="OldNodeName",
+        # ))
         pass
 
 

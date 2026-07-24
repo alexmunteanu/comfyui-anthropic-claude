@@ -30,25 +30,27 @@ except ImportError:
 # ---------------------------------------------------------------------------
 
 BUILTIN_TEMPLATES = {
-    "FLUX": "flux.md",
-    "FLUX Kontext Edit": "flux_edit.md",
+    "FLUX.2": "flux.md",
+    "FLUX.2 Edit": "flux_edit.md",
     "GPT Image 2": "gpt_image_2.md",
     "GPT Image 2 Edit": "gpt_image_2_edit.md",
-    "Grok": "grok.md",
-    "Grok Edit": "grok_edit.md",
+    "Grok Imagine Video": "grok.md",
+    "Grok Imagine Video Edit": "grok_edit.md",
     "Grok Imagine Image": "grok_image.md",
-    "Ideogram 3": "ideogram.md",
+    "HunyuanImage 3.0": "hunyuan_image.md",
+    "Hunyuan Video 1.5": "hunyuan_video.md",
+    "Ideogram 4.0": "ideogram.md",
     "Kling Avatar 2.0": "kling_avatar.md",
     "Kling 2.1 & 2.5": "kling_2-1_2-5.md",
     "Kling 2.6": "kling_2-6.md",
-    "Kling 2.6 Motion Control": "kling_2-6_mc.md",
+    "Kling 3.0 Motion Control": "kling_2-6_mc.md",
     "Kling O1": "kling_o1.md",
-    "Kling V3": "kling_v3.md",
-    "Kling V3 Omni": "kling_o3.md",
+    "Kling 3.0": "kling_v3.md",
+    "Kling 3.0 Omni": "kling_o3.md",
     "LTX 2 Pro": "ltx2pro.md",
     "LTX 2.3": "ltx_2-3.md",
     "Luma Ray 2 & 3": "luma.md",
-    "Luma Ray 3.14": "luma_3-14.md",
+    "Luma Ray 3.2": "luma_ray_3-2.md",
     "Luma Uni-1 & Max": "luma_uni-1.md",
     "Luma Uni-1 Edit": "luma_uni-1_edit.md",
     "Minimax": "minimax.md",
@@ -57,23 +59,48 @@ BUILTIN_TEMPLATES = {
     "Nano Banana Pro": "nano_banana_pro.md",
     "Nano Banana Pro Edit": "nano_banana_pro_edit.md",
     "Pika 2.2 & 2.5": "pika.md",
-    "Qwen Image": "qwen_image.md",
-    "Qwen Image Edit": "qwen_edit.md",
+    "PixVerse V6": "pixverse.md",
+    "Qwen Image 2.0": "qwen_image.md",
+    "Qwen Image 2.0 Edit": "qwen_edit.md",
+    "Recraft V4 & V4.1": "recraft.md",
+    "Reve 2.1": "reve.md",
     "Runway Gen-4 & 4.5": "runway.md",
-    "Runway Aleph Edit": "runway_edit.md",
+    "Runway Aleph 2 Edit": "runway_edit.md",
     "Seedance 1.0 & 1.5": "seedance_1_1-5.md",
-    "Seedance 2.0": "seedance_2.md",
-    "Seedance 2.0 Edit": "seedance_2_edit.md",
+    "Seedance 2.0 & 2.5": "seedance_2.md",
+    "Seedance 2.5 Edit": "seedance_2_edit.md",
     "Seedream 4.0 & 4.5": "seedream.md",
     "Seedream 5.0 Lite": "seedream_5_lite.md",
     "Seedream 5.0 Lite Edit": "seedream_5_lite_edit.md",
+    "Seedream 5.0 Pro": "seedream_5_pro.md",
     "Seedream Edit": "seedream_edit.md",
     "Sora 2 & 2 Pro": "sora.md",
     "Sora 2 Edit": "sora_edit.md",
     "Veo 3 & 3.1": "veo.md",
+    "Vidu Q3": "vidu_q3.md",
     "Wan 2.1 & 2.2": "wan_2-1_2-2.md",
     "Wan 2.5 & 2.6": "wan_2-5_2-6.md",
     "Wan 2.7": "wan_2-7.md",
+}
+
+# Maps old display names to their current names so workflows saved before a
+# display rename still resolve; consulted only on a lookup miss at load time
+# and never listed in the template dropdown.
+LEGACY_TEMPLATE_ALIASES = {
+    "FLUX": "FLUX.2",
+    "FLUX Kontext Edit": "FLUX.2 Edit",
+    "Ideogram 3": "Ideogram 4.0",
+    "Qwen Image": "Qwen Image 2.0",
+    "Qwen Image Edit": "Qwen Image 2.0 Edit",
+    "Grok": "Grok Imagine Video",
+    "Grok Edit": "Grok Imagine Video Edit",
+    "Kling V3": "Kling 3.0",
+    "Kling V3 Omni": "Kling 3.0 Omni",
+    "Kling 2.6 Motion Control": "Kling 3.0 Motion Control",
+    "Runway Aleph Edit": "Runway Aleph 2 Edit",
+    "Seedance 2.0": "Seedance 2.0 & 2.5",
+    "Seedance 2.0 Edit": "Seedance 2.5 Edit",
+    "Luma Ray 3.14": "Luma Ray 3.2",
 }
 
 
@@ -93,7 +120,7 @@ def _list_all_template_names():
     user_files = sorted(user_dir.glob("*.md"))
     for f in user_files:
         name = f.stem
-        if name not in BUILTIN_TEMPLATES:
+        if name not in BUILTIN_TEMPLATES and name not in LEGACY_TEMPLATE_ALIASES:
             names.append(name)
     return names
 
@@ -101,12 +128,24 @@ def _list_all_template_names():
 def _load_template(name):
     if name == "None" or not name:
         return ""
+    if name not in BUILTIN_TEMPLATES and name in LEGACY_TEMPLATE_ALIASES:
+        name = LEGACY_TEMPLATE_ALIASES[name]
     if name in BUILTIN_TEMPLATES:
         path = _get_templates_dir() / BUILTIN_TEMPLATES[name]
     else:
-        path = _get_user_templates_dir() / f"{name}.md"
-    if path.is_file():
-        return path.read_text(encoding="utf-8")
+        user_dir = _get_user_templates_dir()
+        try:
+            path = (user_dir / f"{name}.md").resolve()
+            root = str(user_dir.resolve()).lower()
+            if not str(path).lower().startswith(root + os.sep):
+                return ""
+        except OSError:
+            return ""
+    try:
+        if path.is_file():
+            return path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        return ""
     return ""
 
 
@@ -550,6 +589,12 @@ class AnthropicClaudeNode(io.ComfyNode):
         instructions = instructions or ""
         if not instructions and template and template != "None":
             instructions = _load_template(template)
+            if not instructions.strip():
+                err = (
+                    f"ERROR: Template '{template}' could not be loaded (file missing, "
+                    f"unreadable, or empty). Use the Refresh Templates button and re-select."
+                )
+                return io.NodeOutput(err, "", ui={"text": [err], "usage": ["N/A"], "error": [err]})
         model = _resolve_model(model)
 
         # -- Validate prerequisites --
@@ -717,12 +762,6 @@ class AnthropicClaudeExtension(ComfyExtension):
 
     @override
     async def on_load(self) -> None:
-        # Node Replacement API — register old→new node ID mappings here
-        # api = ComfyAPI()
-        # await api.node_replacement.register(io.NodeReplace(
-        #     new_node_id="AnthropicClaudeNode",
-        #     old_node_id="OldNodeName",
-        # ))
         pass
 
 

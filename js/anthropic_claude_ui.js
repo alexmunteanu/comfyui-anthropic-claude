@@ -1,5 +1,5 @@
 /*
- * Anthropic Claude Node — UI customization
+ * Anthropic Claude Node - UI customization
  * © 2026 Created with ❤️ by Alex Munteanu | alexmunteanu.com
  */
 import { app } from "../../scripts/app.js";

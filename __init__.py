@@ -4,13 +4,14 @@ Custom node for calling the Anthropic Claude API with text and image inputs.
 © 2026 Created with ❤️ by Alex Munteanu | alexmunteanu.com
 """
 
-VERSION = "1.5.22"
+VERSION = "1.5.23"
 
 WEB_DIRECTORY = "./js"
 
 from .anthropic_claude_node import (
     comfy_entrypoint,
     BUILTIN_TEMPLATES,
+    LEGACY_TEMPLATE_ALIASES,
     _get_user_templates_dir,
     _load_template,
     _list_all_template_names,
@@ -37,8 +38,8 @@ try:
         safe_name = "".join(c for c in name if c.isalnum() or c in " _-").strip()
         if not safe_name:
             return web.json_response({"error": "Invalid name"}, status=400)
-        if safe_name in BUILTIN_TEMPLATES:
-            return web.json_response({"error": "Name conflicts with built-in template"}, status=400)
+        if safe_name in BUILTIN_TEMPLATES or safe_name in LEGACY_TEMPLATE_ALIASES:
+            return web.json_response({"error": "Name conflicts with a built-in template"}, status=400)
         user_dir = _get_user_templates_dir()
         path = user_dir / f"{safe_name}.md"
         path.write_text(content, encoding="utf-8")

@@ -26,7 +26,7 @@ Images are automatically resized so neither dimension exceeds `max_image_size` (
 
 ### template (optional)
 
-Dropdown with 31 built-in instruction templates and any user-saved templates. Selecting a template loads its content into the instructions field.
+Dropdown with 58 built-in instruction templates and any user-saved templates. Selecting a template loads its content into the instructions field.
 
 Templates come in two categories:
 
@@ -38,40 +38,67 @@ Templates come in two categories:
 
 | Template | Target |
 |----------|--------|
-| FLUX | FLUX image generation |
-| Grok | Grok image generation |
-| Ideogram 3 | Ideogram 3 image generation |
+| FLUX.2 | FLUX.2 image generation |
+| FLUX 3 Video | FLUX 3 video generation with native audio |
+| Gemini Omni Flash | Gemini Omni Flash video generation |
+| GPT Image 2 | GPT Image 2 image generation |
+| Grok Imagine Video | Grok Imagine Video generation |
+| Grok Imagine Image | Grok Imagine Image generation |
+| HunyuanImage 3.0 | HunyuanImage 3.0 image generation |
+| Hunyuan Video 1.5 | Hunyuan Video 1.5 generation |
+| Ideogram 4.0 | Ideogram 4.0 image generation |
+| Kling Avatar 2.0 | Kling Avatar 2.0 avatar generation |
 | Kling 2.1 & 2.5 | Kling 2.1/2.5 video generation |
 | Kling 2.6 | Kling 2.6 video generation (with audio) |
-| Kling 2.6 Motion Control | Kling 2.6 motion-controlled video |
-| Kling V3 | Kling V3 video generation |
-| Kling O1 | Kling O1 video editing |
-| Kling V3 Omni | Kling V3 Omni multimodal |
-| LTX 2 Pro | LTX video generation |
+| Kling 3.0 Motion Control | Kling 3.0 motion-controlled video |
+| Kling O1 | Kling O1 video editing and generation |
+| Kling 3.0 | Kling 3.0 video generation |
+| Kling 3.0 Omni | Kling 3.0 Omni multimodal |
+| Krea 2 | Krea 2 image generation |
+| LTX 2 Pro | LTX 2 Pro video generation |
+| LTX 2.3 | LTX 2.3 audio-visual video generation |
 | Luma Ray 2 & 3 | Luma Ray 2/3 video generation |
-| Minimax | Minimax video generation |
-| Nano Banana Pro | Nano Banana Pro (Gemini 3 Pro Image) |
+| Luma Ray 3.2 | Luma Ray 3.2 video generation |
+| Luma Uni-1 & Max | Luma Uni-1/Max image generation |
+| MiniMax H3 | MiniMax H3 video generation |
+| MiniMax Hailuo 2.3 | MiniMax Hailuo 2.3 video generation |
+| Nano Banana 2 | Nano Banana 2 (Gemini 3.1 Flash Image) generation |
+| Nano Banana Pro | Nano Banana Pro (Gemini 3 Pro Image) generation |
 | Pika 2.2 & 2.5 | Pika video generation |
-| Qwen Image | Qwen image generation |
+| PixVerse V6 | PixVerse V6 video generation |
+| Qwen Image 2.0 | Qwen Image 2.0 generation |
+| Qwen Image 3.0 | Qwen Image 3.0 generation |
+| Recraft V4 & V4.1 | Recraft V4/V4.1 image generation |
+| Reve 2.1 | Reve 2.1 image generation |
 | Runway Gen-4 & 4.5 | Runway Gen-4/4.5 video generation |
 | Seedance 1.0 & 1.5 | Seedance 1.0/1.5 video generation |
-| Seedance 2.0 | Seedance 2.0 video generation |
-| Seedream 4.0 / 4.5 | Seedream image generation |
-| Sora 2 & 2 Pro | Sora video generation |
-| Veo 3 & 3.1 | Veo video generation |
+| Seedance 2.0 & 2.5 | Seedance 2.0/2.5 video generation |
+| Seedream 4.0 & 4.5 | Seedream 4.0/4.5 image generation |
+| Seedream 5.0 Lite | Seedream 5.0 Lite image generation |
+| Seedream 5.0 Pro | Seedream 5.0 Pro image generation |
+| Sora 2 & 2 Pro | Sora 2/2 Pro video generation |
+| Veo 3 & 3.1 | Veo 3/3.1 video generation |
+| Vidu Q3 | Vidu Q3 video generation |
 | Wan 2.1 & 2.2 | Wan 2.1/2.2 video generation |
 | Wan 2.5 & 2.6 | Wan 2.5/2.6 video generation |
+| Wan 2.7 | Wan 2.7 video generation |
+| Wan 3.0 | Wan 3.0 video generation |
 
 #### Editing Templates
 
 | Template | Target |
 |----------|--------|
-| FLUX Kontext Edit | FLUX Kontext image editing |
-| Grok Edit | Grok image editing |
+| FLUX.2 Edit | FLUX.2 image editing |
+| GPT Image 2 Edit | GPT Image 2 image editing |
+| Grok Imagine Video Edit | Grok Imagine Video editing |
+| Luma Uni-1 Edit | Luma Uni-1 image editing |
+| Nano Banana 2 Edit | Nano Banana 2 image editing |
 | Nano Banana Pro Edit | Nano Banana Pro image editing |
-| Qwen Image Edit | Qwen image editing |
-| Runway Aleph Edit | Runway Aleph video editing |
-| Seedance 2.0 Edit | Seedance 2.0 video editing |
+| Qwen Image 2.0 Edit | Qwen Image 2.0 editing |
+| Qwen Image 3.0 Edit | Qwen Image 3.0 editing |
+| Runway Aleph 2 Edit | Runway Aleph 2 video editing |
+| Seedance 2.5 Edit | Seedance 2.5 video editing |
+| Seedream 5.0 Lite Edit | Seedream 5.0 Lite image editing |
 | Seedream Edit | Seedream image editing |
 | Sora 2 Edit | Sora video editing |
 

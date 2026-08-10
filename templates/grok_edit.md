@@ -10,7 +10,7 @@ This template is for EDITING existing images and videos only. For generating new
 ## Model Specs
 
 ### Grok Imagine Video 1.5 (Aurora autoregressive engine)
-- API ID: `grok-imagine-video-1.5-preview` (GA June 2026)
+- API ID: `grok-imagine-video-1.5`
 - Edit modes: image editing, multi-reference image editing (2-3 references), video-to-video editing
 - Audio: native synchronized audio; audio direction can be updated during video edits
 - Negative prompts: not supported

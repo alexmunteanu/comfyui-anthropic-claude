@@ -71,7 +71,7 @@ If the API key isn't set or the Anthropic API is unreachable at startup, the dro
 
 ## "Name conflicts with built-in template"
 
-You tried to save a user template with a name that matches one of the 51 built-in templates.
+You tried to save a user template with a name that matches one of the 58 built-in templates, or one of their legacy aliases (older display names kept so workflows saved before a rename still resolve).
 
 **Fix**: Choose a different name. Built-in template names are reserved to prevent user files from being hidden by the collision.
 

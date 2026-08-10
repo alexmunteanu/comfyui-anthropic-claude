@@ -32,6 +32,8 @@ except ImportError:
 BUILTIN_TEMPLATES = {
     "FLUX.2": "flux.md",
     "FLUX.2 Edit": "flux_edit.md",
+    "FLUX 3 Video": "flux_3_video.md",
+    "Gemini Omni Flash": "gemini_omni_flash.md",
     "GPT Image 2": "gpt_image_2.md",
     "GPT Image 2 Edit": "gpt_image_2_edit.md",
     "Grok Imagine Video": "grok.md",
@@ -47,13 +49,15 @@ BUILTIN_TEMPLATES = {
     "Kling O1": "kling_o1.md",
     "Kling 3.0": "kling_v3.md",
     "Kling 3.0 Omni": "kling_o3.md",
+    "Krea 2": "krea_2.md",
     "LTX 2 Pro": "ltx2pro.md",
     "LTX 2.3": "ltx_2-3.md",
     "Luma Ray 2 & 3": "luma.md",
     "Luma Ray 3.2": "luma_ray_3-2.md",
     "Luma Uni-1 & Max": "luma_uni-1.md",
     "Luma Uni-1 Edit": "luma_uni-1_edit.md",
-    "Minimax": "minimax.md",
+    "MiniMax H3": "minimax_h3.md",
+    "MiniMax Hailuo 2.3": "minimax.md",
     "Nano Banana 2": "nano_banana_2.md",
     "Nano Banana 2 Edit": "nano_banana_2_edit.md",
     "Nano Banana Pro": "nano_banana_pro.md",
@@ -62,6 +66,8 @@ BUILTIN_TEMPLATES = {
     "PixVerse V6": "pixverse.md",
     "Qwen Image 2.0": "qwen_image.md",
     "Qwen Image 2.0 Edit": "qwen_edit.md",
+    "Qwen Image 3.0": "qwen_image_3.md",
+    "Qwen Image 3.0 Edit": "qwen_image_3_edit.md",
     "Recraft V4 & V4.1": "recraft.md",
     "Reve 2.1": "reve.md",
     "Runway Gen-4 & 4.5": "runway.md",
@@ -81,11 +87,12 @@ BUILTIN_TEMPLATES = {
     "Wan 2.1 & 2.2": "wan_2-1_2-2.md",
     "Wan 2.5 & 2.6": "wan_2-5_2-6.md",
     "Wan 2.7": "wan_2-7.md",
+    "Wan 3.0": "wan_3-0.md",
 }
 
-# Maps old display names to their current names so workflows saved before a
-# display rename still resolve; consulted only on a lookup miss at load time
-# and never listed in the template dropdown.
+# Maps old display names to their current names so workflows saved before the
+# v1.5.22 and v1.5.23 display renames still resolve; consulted only on a lookup
+# miss at load time and never listed in the template dropdown.
 LEGACY_TEMPLATE_ALIASES = {
     "FLUX": "FLUX.2",
     "FLUX Kontext Edit": "FLUX.2 Edit",
@@ -97,6 +104,7 @@ LEGACY_TEMPLATE_ALIASES = {
     "Kling V3": "Kling 3.0",
     "Kling V3 Omni": "Kling 3.0 Omni",
     "Kling 2.6 Motion Control": "Kling 3.0 Motion Control",
+    "Minimax": "MiniMax Hailuo 2.3",
     "Runway Aleph Edit": "Runway Aleph 2 Edit",
     "Seedance 2.0": "Seedance 2.0 & 2.5",
     "Seedance 2.0 Edit": "Seedance 2.5 Edit",
@@ -762,6 +770,12 @@ class AnthropicClaudeExtension(ComfyExtension):
 
     @override
     async def on_load(self) -> None:
+        # Node Replacement API - register old-to-new node ID mappings here
+        # api = ComfyAPI()
+        # await api.node_replacement.register(io.NodeReplace(
+        #     new_node_id="AnthropicClaudeNode",
+        #     old_node_id="OldNodeName",
+        # ))
         pass
 
 

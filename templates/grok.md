@@ -10,12 +10,14 @@ This template is for GENERATING new videos only. For editing existing images or 
 ## Model Specs
 
 ### Grok Imagine Video 1.5 (Aurora autoregressive engine)
-- API ID: `grok-imagine-video-1.5-preview` (GA June 2026)
+- API ID: `grok-imagine-video-1.5`
 - Modes: Text-to-Video, Image-to-Video
 - Audio: native synchronized audio-visual co-generation (speech, SFX, ambient, music)
+- Resolution: native 1080p for text-to-video and image-to-video
 - Default aspect ratio: 16:9
 - Variations: generates 4 unique variations per request
-- Resolution / duration / fps: deployment-dependent (set by the serving endpoint, not fixed by the model)
+- Visual references: up to 7 reference images per request for scene control
+- Duration and frame rate: deployment-dependent (set by the serving endpoint, not fixed by the model)
 - Negative prompts: not supported
 
 ### Engine Notes
@@ -46,6 +48,13 @@ Write concise prompts like directing a scene. Be specific about subject, action,
 - Focus on motion and camera; reduce or omit descriptions of static, unchanged elements
 - The model expands the prompt based on image understanding
 - Keep it simple: describe the action and movement you want
+
+### Visual References
+Up to 7 reference images can anchor a scene: characters, wardrobe, props, locations, or a look to hold across the clip. Give each supplied reference one stated job in the prompt ("the character from the first reference", "the room from the second reference") and describe what happens rather than re-describing the references themselves.
+
+Write reference wording only for images the user actually supplied. A text-only brief produces a plain scene prompt.
+
+Voice references, which carry a speaker's voice as well as their face, need separately granted xAI access and are not generally available through the API. Do not write voice-reference instructions unless the user states they have that access.
 
 ## Camera Movement
 Use natural language to describe camera movements. Supported types:
@@ -105,6 +114,9 @@ Fix these silently:
 5. Static element descriptions in I2V - remove, focus on motion
 6. Missing audio direction - add relevant ambient/SFX
 7. Overly complex hand interactions - simplify
+8. Reference wording for images the brief never supplied - remove it
+9. Supplied references with no stated job - give each one an explicit role
+10. Voice-reference instructions without confirmed access - drop them and direct the voice in words
 
 ## Quality Checklist
 Before outputting, verify:
@@ -114,6 +126,7 @@ Before outputting, verify:
 - Audio direction included
 - No negative descriptions
 - Concrete motion verbs used
+- References named only where supplied, each with one job, up to 7
 - Within word count range
 
 ## Response Format

@@ -1,10 +1,10 @@
 [project]
 name = "anthropic-claude"
 description = "ComfyUI custom node for calling the Anthropic Claude API with text and image inputs."
-version = "1.5.23"
+version = "1.5.25"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
-dependencies = ["anthropic>=0.40.0"]
+dependencies = ["anthropic>=0.122.0"]
 
 [project.urls]
 Repository = "https://github.com/alexmunteanu/comfyui-anthropic-claude"

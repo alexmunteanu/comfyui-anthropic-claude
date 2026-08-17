@@ -26,7 +26,7 @@ The Python SDK isn't installed in ComfyUI's Python environment.
 **Fix**:
 
 ```bash
-pip install anthropic>=0.40.0
+pip install anthropic>=0.122.0
 ```
 
 If ComfyUI uses a virtual environment (common with portable installs), activate it first:
@@ -34,7 +34,7 @@ If ComfyUI uses a virtual environment (common with portable installs), activate 
 ```bash
 # Windows (ComfyUI portable)
 ComfyUI\.venv\Scripts\activate
-pip install anthropic>=0.40.0
+pip install anthropic>=0.122.0
 ```
 
 ## "Invalid API key"
@@ -71,7 +71,7 @@ If the API key isn't set or the Anthropic API is unreachable at startup, the dro
 
 ## "Name conflicts with built-in template"
 
-You tried to save a user template with a name that matches one of the 58 built-in templates, or one of their legacy aliases (older display names kept so workflows saved before a rename still resolve).
+You tried to save a user template with a name that matches one of the 60 built-in templates, or one of their legacy aliases (older display names kept so workflows saved before a rename still resolve).
 
 **Fix**: Choose a different name. Built-in template names are reserved to prevent user files from being hidden by the collision.
 

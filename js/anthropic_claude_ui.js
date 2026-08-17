@@ -58,6 +58,43 @@ function showInputDialog(title, callback) {
     input.focus();
 }
 
+function showConfirmDialog(message, confirmLabel, callback) {
+    var overlay = document.createElement("div");
+    overlay.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10002;display:flex;align-items:center;justify-content:center;";
+
+    var box = document.createElement("div");
+    box.style.cssText = "background:#2a2a2a;border:1px solid #555;border-radius:8px;padding:20px;min-width:320px;max-width:420px;color:#ddd;font-family:sans-serif;";
+
+    var label = document.createElement("div");
+    label.textContent = message;
+    label.style.cssText = "margin-bottom:14px;font-size:14px;line-height:1.5;";
+
+    var btnRow = document.createElement("div");
+    btnRow.style.cssText = "display:flex;justify-content:flex-end;gap:8px;";
+
+    var cancelBtn = document.createElement("button");
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.style.cssText = "padding:6px 16px;background:#444;border:none;border-radius:4px;color:#ccc;cursor:pointer;font-size:13px;";
+
+    var okBtn = document.createElement("button");
+    okBtn.textContent = confirmLabel;
+    okBtn.style.cssText = "padding:6px 16px;background:#b91c1c;border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:13px;";
+
+    function close() { if (overlay.parentNode) document.body.removeChild(overlay); }
+
+    cancelBtn.onclick = close;
+    overlay.onclick = function (e) { if (e.target === overlay) close(); };
+    okBtn.onclick = function () { close(); callback(); };
+
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(okBtn);
+    box.appendChild(label);
+    box.appendChild(btnRow);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    okBtn.focus();
+}
+
 function showToast(msg, isError) {
     var toast = document.createElement("div");
     toast.textContent = msg;
@@ -68,6 +105,39 @@ function showToast(msg, isError) {
         toast.style.opacity = "0";
         setTimeout(function () { document.body.removeChild(toast); }, 500);
     }, 2500);
+}
+
+/* Saving asks before replacing a template that already exists. A template
+ * becomes the system prompt for the user's own billed calls, so replacing one
+ * without asking changes what they are paying for. The server answers 409 when
+ * the name is taken and the request did not say to replace it. */
+function _postTemplate(name, content, overwrite, onSaved) {
+    var status = 0;
+    fetch("/anthropic_claude/save_template", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name, content: content, overwrite: overwrite === true })
+    }).then(function (res) {
+        status = res.status;
+        return res.json();
+    }).then(function (data) {
+        if (status === 409) {
+            showConfirmDialog(
+                "Template \"" + ((data && data.name) || name) + "\" already exists.",
+                "Replace",
+                function () { _postTemplate(name, content, true, onSaved); }
+            );
+            return;
+        }
+        if (data && data.ok) {
+            if (onSaved) onSaved(data.name);
+            showToast("Template saved: " + data.name, false);
+        } else {
+            showToast("Error: " + ((data && data.error) || "Unknown error"), true);
+        }
+    }).catch(function (err) {
+        showToast("Failed to save template: " + err, true);
+    });
 }
 
 var _warningsChecked = false;
@@ -131,7 +201,13 @@ function _createApiErrorModal() {
     keyInput.style.cssText = "width:100%;box-sizing:border-box;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:5px;color:#e2e8f0;font-size:13px;font-family:monospace;outline:none;margin-bottom:16px;";
     keyInput.onfocus = function () { keyInput.style.borderColor = "#2563eb"; };
     keyInput.onblur = function () { keyInput.style.borderColor = "#334155"; };
-    keyInput.onkeydown = function (e) { if (e.key === "Enter") _retryApiConnection(); };
+    // Ignored while a retry is already running, so holding Enter cannot start
+    // a second attempt that overlaps the first.
+    keyInput.onkeydown = function (e) {
+        if (e.key === "Enter" && _apiErrorRetryBtn && !_apiErrorRetryBtn.disabled) {
+            _retryApiConnection();
+        }
+    };
 
     var btnRow = document.createElement("div");
     btnRow.style.cssText = "display:flex;justify-content:flex-end;gap:8px;";
@@ -182,6 +258,10 @@ function _closeApiErrorModal() {
 }
 
 function _retryApiConnection() {
+    // The status belongs to THIS attempt. Held in a module variable it was
+    // shared, so a second attempt started before the first answered could
+    // leave the first handler reading the second one's status.
+    var retryStatus = 0;
     _apiErrorRetryBtn.textContent = "Retrying...";
     _apiErrorRetryBtn.disabled = true;
     var body = {};
@@ -193,10 +273,17 @@ function _retryApiConnection() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
     })
-        .then(function (r) { return r.json(); })
+        .then(function (r) { retryStatus = r.status; return r.json(); })
         .then(function (d) {
             _apiErrorRetryBtn.textContent = "Retry Connection";
             _apiErrorRetryBtn.disabled = false;
+            // A refused request answers with a plain message rather than the
+            // usual status object, so it is read as a message.
+            if (retryStatus !== 200) {
+                _apiErrorMsgEl.textContent =
+                    (d && typeof d.error === "string" && d.error) || _apiErrorMessages.unknown;
+                return;
+            }
             if (d.ok) {
                 if (d.models && d.models.length && _apiErrorNode) {
                     var modelWidget = null;
@@ -230,8 +317,9 @@ function _retryApiConnection() {
                 _closeApiErrorModal();
                 showToast("API connected. Models refreshed.", false);
             } else {
-                var msg = _apiErrorMessages[d.error.error_type] || d.error.error || _apiErrorMessages.unknown;
-                _apiErrorMsgEl.textContent = msg;
+                var info = d.error || {};
+                _apiErrorMsgEl.textContent =
+                    _apiErrorMessages[info.error_type] || info.error || _apiErrorMessages.unknown;
             }
         })
         .catch(function () {
@@ -281,10 +369,12 @@ var _histStylesInjected = false;
 var _histOverlay = null;
 var _histCurrentNode = null;
 var _histDebounce = null;
+/* Entries are addressed by id and date. The server never sends a file path and
+ * never accepts one back, so every call below carries the pair instead. */
 var _histState = {
     page: 1, perPage: 20, search: "", dateFrom: "", dateTo: "",
     favoritesOnly: false, sortBy: "date_desc",
-    total: 0, totalPages: 1, expandedPath: null
+    total: 0, totalPages: 1, expandedId: null
 };
 var _histEls = {};
 
@@ -314,6 +404,7 @@ function _injectHistoryStyles() {
         ".ach-list::-webkit-scrollbar-track{background:transparent}",
         ".ach-list::-webkit-scrollbar-thumb{background:#334155;border-radius:4px}",
         ".ach-empty{text-align:center;padding:60px 20px;color:#64748b;font-size:14px}",
+        ".ach-note{background:#2d2410;border:1px solid #4a3a12;border-radius:5px;color:#fbbf24;font-size:12px;padding:7px 12px;margin-bottom:8px}",
         ".ach-entry{background:#22223a;border:1px solid #2d2d50;border-radius:6px;margin-bottom:6px;overflow:hidden;transition:border-color 0.15s}",
         ".ach-entry:hover{border-color:#3b3b60}",
         ".ach-entry-head{display:flex;align-items:center;padding:8px 12px;gap:8px;cursor:pointer;user-select:none}",
@@ -545,7 +636,7 @@ function _openHistoryModal(node) {
     _histState.dateTo = "";
     _histState.favoritesOnly = false;
     _histState.sortBy = "date_desc";
-    _histState.expandedPath = null;
+    _histState.expandedId = null;
 
     if (!_histOverlay) {
         _histOverlay = _createHistoryModal();
@@ -594,6 +685,9 @@ function _fetchHistoryStats() {
             if (d.most_used_model) {
                 parts.push("Top: " + d.most_used_model);
             }
+            if (d.truncated) {
+                parts.push("partial totals");
+            }
             _histEls.stats.textContent = parts.join("  \u2022  ");
         })
         .catch(function () {
@@ -616,6 +710,16 @@ function _fetchHistoryList() {
             _histState.total = d.total;
             _histState.totalPages = d.total_pages;
             _renderHistoryList(d.entries);
+            if (d.truncated) {
+                // Says nothing about counts or which end was cut. The server
+                // stops after a fixed amount of work, so what is missing
+                // depends on the search and the sort order, and naming a
+                // number would be wrong in most of them.
+                var note = document.createElement("div");
+                note.className = "ach-note";
+                note.textContent = "Older entries were not included. Narrow the date range to reach them.";
+                _histEls.list.insertBefore(note, _histEls.list.firstChild);
+            }
             _histEls.pageInfo.textContent = "Page " + d.page + " of " + d.total_pages + " (" + d.total + " total)";
             _histEls.prevBtn.disabled = d.page <= 1;
             _histEls.nextBtn.disabled = d.page >= d.total_pages;
@@ -640,7 +744,8 @@ function _renderHistoryList(entries) {
 function _renderHistoryEntry(entry) {
     var el = document.createElement("div");
     el.className = "ach-entry";
-    el.setAttribute("data-path", entry._path);
+    el.setAttribute("data-id", entry.id);
+    el.setAttribute("data-date", entry.date);
 
     // Head row
     var head = document.createElement("div");
@@ -651,7 +756,7 @@ function _renderHistoryEntry(entry) {
     favBtn.textContent = entry.favorite ? "\u2605" : "\u2606";
     favBtn.onclick = function (e) {
         e.stopPropagation();
-        _toggleFavorite(entry._path, favBtn);
+        _toggleFavorite(entry.id, entry.date, favBtn);
     };
 
     var dateSpan = document.createElement("span");
@@ -690,7 +795,7 @@ function _renderHistoryEntry(entry) {
         head.appendChild(errBadge);
     }
 
-    if (entry.has_images) {
+    if (entry.image_count > 0) {
         var imgBadge = document.createElement("span");
         imgBadge.className = "ach-entry-imgs";
         imgBadge.textContent = "\uD83D\uDDBC";
@@ -707,7 +812,7 @@ function _renderHistoryEntry(entry) {
     delBtn.title = "Delete";
     delBtn.onclick = function (e) {
         e.stopPropagation();
-        _confirmDelete(entry._path, el, delBtn);
+        _confirmDelete(entry.id, entry.date, el, delBtn);
     };
     head.appendChild(delBtn);
 
@@ -734,9 +839,9 @@ function _renderHistoryEntry(entry) {
         var detail = el.querySelector(".ach-detail");
         if (detail) {
             el.removeChild(detail);
-            _histState.expandedPath = null;
+            _histState.expandedId = null;
         } else {
-            _expandEntry(entry._path, el);
+            _expandEntry(entry.id, entry.date, el);
         }
     };
     head.onclick = clickArea;
@@ -745,33 +850,38 @@ function _renderHistoryEntry(entry) {
     return el;
 }
 
-function _expandEntry(path, el) {
+function _expandEntry(entryId, date, el) {
     // Collapse any previously expanded
     var prev = _histEls.list.querySelector(".ach-detail");
     if (prev) prev.parentNode.removeChild(prev);
 
-    _histState.expandedPath = path;
+    _histState.expandedId = entryId;
 
     var placeholder = document.createElement("div");
     placeholder.className = "ach-detail";
     placeholder.innerHTML = '<div style="color:#64748b;font-size:12px;padding:8px">Loading...</div>';
     el.appendChild(placeholder);
 
-    fetch("/anthropic_claude/history/entry?path=" + encodeURIComponent(path))
-        .then(function (r) { return r.json(); })
+    // Failure is decided by the response status, not by the body. An entry
+    // that recorded an API error carries its own "error" field, and testing
+    // that would report every one of those as missing.
+    var status = 0;
+    fetch("/anthropic_claude/history/entry?id=" + encodeURIComponent(entryId)
+        + "&date=" + encodeURIComponent(date))
+        .then(function (r) { status = r.status; return r.json(); })
         .then(function (entry) {
-            if (!entry || entry.error === "not found") {
+            if (status !== 200 || !entry || !entry.id) {
                 placeholder.innerHTML = '<div style="color:#ef4444;font-size:12px;padding:8px">Entry not found</div>';
                 return;
             }
-            _renderDetail(entry, placeholder, path);
+            _renderDetail(entry, placeholder);
         })
         .catch(function () {
             placeholder.innerHTML = '<div style="color:#ef4444;font-size:12px;padding:8px">Failed to load entry</div>';
         });
 }
 
-function _renderDetail(entry, container, path) {
+function _renderDetail(entry, container) {
     container.innerHTML = "";
 
     // Settings row + Load Settings button
@@ -799,13 +909,13 @@ function _renderDetail(entry, container, path) {
     settings.appendChild(loadBtn);
     container.appendChild(settings);
 
-    // Images
-    if (entry.image_paths && entry.image_paths.length > 0) {
+    // Images. The address of each thumbnail is the entry's own id plus the
+    // slot number, so no path is needed to fetch one.
+    if (entry.image_count > 0) {
         var imgBox = document.createElement("div");
         imgBox.className = "ach-detail-images";
-        for (var j = 0; j < entry.image_paths.length; j++) {
+        for (var j = 0; j < entry.image_count; j++) {
             (function (idx) {
-                var imgPath = entry.image_paths[idx];
                 var dim = (entry.image_dimensions && entry.image_dimensions[idx]) || { width: 300, height: 300 };
                 var maxPh = 150;
                 var ar = dim.width / dim.height;
@@ -815,7 +925,9 @@ function _renderDetail(entry, container, path) {
 
                 var img = document.createElement("img");
                 img.className = "ach-detail-thumb";
-                img.src = "/anthropic_claude/history/image?path=" + encodeURIComponent(imgPath);
+                img.src = "/anthropic_claude/history/image?id=" + encodeURIComponent(entry.id)
+                    + "&date=" + encodeURIComponent(entry.date)
+                    + "&index=" + idx;
                 img.style.width = phW + "px";
                 img.style.height = phH + "px";
                 img.onerror = function () {
@@ -891,17 +1003,19 @@ function _renderDetail(entry, container, path) {
     }
 }
 
-function _toggleFavorite(path, btn) {
+function _toggleFavorite(entryId, date, btn) {
     fetch("/anthropic_claude/history/favorite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: path })
+        body: JSON.stringify({ id: entryId, date: date })
     })
     .then(function (r) { return r.json(); })
     .then(function (d) {
-        if (d.favorite !== undefined) {
+        if (d && typeof d.favorite === "boolean") {
             btn.className = "ach-fav-btn" + (d.favorite ? " active" : "");
             btn.textContent = d.favorite ? "\u2605" : "\u2606";
+        } else {
+            showToast("Failed to update favorite", true);
         }
     })
     .catch(function () {
@@ -909,8 +1023,7 @@ function _toggleFavorite(path, btn) {
     });
 }
 
-function _confirmDelete(path, entryEl, delBtn) {
-    var orig = delBtn.innerHTML;
+function _confirmDelete(entryId, date, entryEl, delBtn) {
     delBtn.style.display = "none";
 
     var confirm = document.createElement("span");
@@ -922,7 +1035,7 @@ function _confirmDelete(path, entryEl, delBtn) {
     yesBtn.textContent = "Yes";
     yesBtn.onclick = function (e) {
         e.stopPropagation();
-        _deleteEntry(path, entryEl);
+        _deleteEntry(entryId, date, entryEl);
     };
 
     var noBtn = document.createElement("button");
@@ -939,11 +1052,11 @@ function _confirmDelete(path, entryEl, delBtn) {
     delBtn.parentNode.insertBefore(confirm, delBtn.nextSibling);
 }
 
-function _deleteEntry(path, entryEl) {
+function _deleteEntry(entryId, date, entryEl) {
     fetch("/anthropic_claude/history/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: path })
+        body: JSON.stringify({ id: entryId, date: date })
     })
     .then(function (r) { return r.json(); })
     .then(function (d) {
@@ -968,6 +1081,58 @@ function _deleteEntry(path, entryEl) {
     .catch(function () {
         showToast("Failed to delete entry", true);
     });
+}
+
+/* Retired template display names mapped to their current ones, fetched alongside the
+ * template list. Mirrors LEGACY_TEMPLATE_ALIASES on the server so a history entry saved
+ * under a retired name still restores. The dropdown itself never lists alias keys.
+ * _templateAliasesLoaded separates "no aliases apply" from "never fetched": an empty map
+ * cannot resolve anything, and reporting that as a missing template would be false. */
+var _templateAliases = {};
+var _templateAliasesLoaded = false;
+
+/* Resolve a saved template name against the live dropdown values, in the same order the
+ * server uses: a live name wins outright, otherwise one hop through the alias map.
+ * Returns null when the name cannot be resolved. History entries come off disk and may
+ * not be ours, so a non-string name is rejected up front: indexOf compares strictly while
+ * hasOwnProperty coerces to a string key, and the two must not disagree. */
+function _resolveTemplateName(name, values) {
+    if (typeof name !== "string" || !name || !values) return null;
+    if (values.indexOf(name) !== -1) return name;
+    if (Object.prototype.hasOwnProperty.call(_templateAliases, name)) {
+        var target = _templateAliases[name];
+        if (target && values.indexOf(target) !== -1) return target;
+    }
+    return null;
+}
+
+/* Set the template widget from a saved name. When the name does not resolve and the alias
+ * map has never loaded, reuse the refresh that populates the dropdown and try once more,
+ * so an in-flight or failed initial fetch is not reported as a missing template. One
+ * retry, guarded by isRetry; never a loop. */
+function _restoreTemplateWidget(w, savedName, node, isRetry) {
+    var values = (w.options && w.options.values) ? w.options.values : null;
+    var resolved = _resolveTemplateName(savedName, values);
+    if (resolved) {
+        w.value = resolved;
+        if (w.callback) w.callback(resolved);
+        return;
+    }
+    if (!_templateAliasesLoaded && !isRetry && node && node._acRefreshTemplateList) {
+        var pending = node._acRefreshTemplateList();
+        if (pending && pending.then) {
+            pending.then(function () {
+                _restoreTemplateWidget(w, savedName, node, true);
+                node.setDirtyCanvas(true, true);
+            });
+            return;
+        }
+    }
+    if (!_templateAliasesLoaded) {
+        showToast("Template list has not loaded yet, template not restored", true);
+    } else {
+        showToast("Template '" + savedName + "' not available, skipped", true);
+    }
 }
 
 function _loadSettings(entry) {
@@ -1004,10 +1169,7 @@ function _loadSettings(entry) {
 
     w = findWidget("template");
     if (w && entry.template) {
-        if (w.options && w.options.values && w.options.values.indexOf(entry.template) !== -1) {
-            w.value = entry.template;
-            if (w.callback) w.callback(entry.template);
-        }
+        _restoreTemplateWidget(w, entry.template, node, false);
     }
 
     w = findWidget("temperature");
@@ -1173,10 +1335,14 @@ app.registerExtension({
                 });
 
                 function refreshTemplateList(selectName) {
-                    if (!templateWidget) return;
-                    fetch("/anthropic_claude/list_templates")
+                    if (!templateWidget) return null;
+                    return fetch("/anthropic_claude/list_templates")
                         .then(function (res) { return res.json(); })
                         .then(function (data) {
+                            if (data.aliases) {
+                                _templateAliases = data.aliases;
+                                _templateAliasesLoaded = true;
+                            }
                             if (data.templates) {
                                 templateWidget.options.values = data.templates;
                                 if (selectName) {
@@ -1217,20 +1383,7 @@ app.registerExtension({
                         return;
                     }
                     showInputDialog("Template name:", function (name) {
-                        fetch("/anthropic_claude/save_template", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ name: name, content: content })
-                        }).then(function (res) { return res.json(); }).then(function (data) {
-                            if (data.ok) {
-                                refreshTemplateList(data.name);
-                                showToast("Template saved: " + data.name, false);
-                            } else {
-                                showToast("Error: " + (data.error || "Unknown error"), true);
-                            }
-                        }).catch(function (err) {
-                            showToast("Failed to save template: " + err, true);
-                        });
+                        _postTemplate(name, content, false, refreshTemplateList);
                     });
                 });
 

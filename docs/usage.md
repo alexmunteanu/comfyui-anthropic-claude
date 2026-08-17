@@ -26,7 +26,7 @@ Images are automatically resized so neither dimension exceeds `max_image_size` (
 
 ### template (optional)
 
-Dropdown with 58 built-in instruction templates and any user-saved templates. Selecting a template loads its content into the instructions field.
+Dropdown with 60 built-in instruction templates and any user-saved templates. Selecting a template loads its content into the instructions field.
 
 Templates come in two categories:
 
@@ -71,8 +71,10 @@ Templates come in two categories:
 | Recraft V4 & V4.1 | Recraft V4/V4.1 image generation |
 | Reve 2.1 | Reve 2.1 image generation |
 | Runway Gen-4 & 4.5 | Runway Gen-4/4.5 video generation |
-| Seedance 1.0 & 1.5 | Seedance 1.0/1.5 video generation |
-| Seedance 2.0 & 2.5 | Seedance 2.0/2.5 video generation |
+| Seedance 1.0 | Seedance 1.0 Pro and Pro Fast video generation |
+| Seedance 1.5 | Seedance 1.5 video generation with native audio |
+| Seedance 2.0 | Seedance 2.0, Fast and Mini video generation |
+| Seedance 2.5 | Seedance 2.5 video generation |
 | Seedream 4.0 & 4.5 | Seedream 4.0/4.5 image generation |
 | Seedream 5.0 Lite | Seedream 5.0 Lite image generation |
 | Seedream 5.0 Pro | Seedream 5.0 Pro image generation |

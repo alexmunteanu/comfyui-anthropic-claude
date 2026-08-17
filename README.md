@@ -1,13 +1,13 @@
 # Anthropic Claude for ComfyUI
 
-A ComfyUI node that uses Claude to generate optimized prompts for 30+ image and video models. 58 built-in templates for FLUX, Runway, Kling, Veo, Gemini Omni Flash, Wan, Luma, Seedance, Seedream, Qwen, Nano Banana, Hunyuan, MiniMax, Vidu, PixVerse, Recraft, Reve, Krea, and others. Save your own templates, track every run with searchable execution history, and monitor costs.
+A ComfyUI node that uses Claude to generate optimized prompts for 30+ image and video models. 60 built-in templates for FLUX, Runway, Kling, Veo, Gemini Omni Flash, Wan, Luma, Seedance, Seedream, Qwen, Nano Banana, Hunyuan, MiniMax, Vidu, PixVerse, Recraft, Reve, Krea, and others. Save your own templates, track every run with searchable execution history, and monitor costs.
 
 ![anthropic_claude](./node.png)
 
 ## What It Does
 
 - **Text and vision**: send text prompts with optional images to any Claude model
-- **58 built-in templates**: pre-written instructions for popular AI video/image models (generation and editing)
+- **60 built-in templates**: pre-written instructions for popular AI video/image models (generation and editing)
 - **Save your own templates**: create and reuse custom instruction sets
 - **Execution history**: searchable log of every run with cost tracking, favorites, and one-click settings restore
 - **Model selection**: auto-fetched from the Anthropic API

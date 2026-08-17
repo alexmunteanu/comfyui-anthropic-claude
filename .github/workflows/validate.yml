@@ -1,11 +1,16 @@
-name: Validate backwards compatibility
+name: Validate backward compatibility
 on:
   pull_request:
-    branches:
-      - main
+    paths:
+      - "**.py"
+      - "pyproject.toml"
 
 jobs:
-  validate:
+  node-diff:
+    name: Check for breaking node changes
     runs-on: ubuntu-latest
     steps:
-      - uses: comfy-org/node-diff@main
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Run node diff
+        uses: comfy-org/node-diff@main

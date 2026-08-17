@@ -26,7 +26,7 @@ git clone https://github.com/alexmunteanu/comfyui-anthropic-claude.git comfyui_a
 Then install the Python dependency:
 
 ```bash
-pip install anthropic>=0.40.0
+pip install anthropic>=0.122.0
 ```
 
 If you're using ComfyUI's virtual environment, activate it first.

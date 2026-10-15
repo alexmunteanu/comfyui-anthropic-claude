@@ -71,11 +71,11 @@ The template file is missing, unreadable, or empty. Click **Refresh Templates** 
 
 ## An old workflow shows a different template name
 
-A renamed template opened under its new name, for example "Veo 3.1 (Retiring 2026-10-22)" now opens as "Veo 3.1".
+A renamed template opened under its new name, for example "Veo 3.1 (Retiring 2026-10-22)" now opens as "Veo 3.1", and "GPT Image 2.5 Sunburst Edit" as "GPT Image 2.5 Edit".
 
 ## Template updates do not change an old workflow's results
 
-A workflow stores the template text in its **instructions** field when you select a template, and it runs that saved text. Templates updated in a new version of the node, such as Veo 3.1 and Kling 3.0 in 1.8.0, reach the workflow only after you select the template again. If the dropdown already shows the right template, select **None**, then the template.
+A workflow stores the template text in its **instructions** field when you select a template, and it runs that saved text. Templates updated in a new version of the node, such as GPT Image 2.5 and GPT Image 2.5 Edit in 1.9.0, reach the workflow only after you select the template again. If the dropdown already shows the right template, select **None**, then the template.
 
 ## "ERROR: Prompt is empty."
 
@@ -91,7 +91,7 @@ Anthropic refused the request. The text after the colon says why, for example a 
 
 ## "Name conflicts with a built-in template"
 
-Your template's name matches a built-in one. Choose another name. Version 1.8.0 adds built-in templates such as "FLUX Video Edit" and "Pruna P-Video-2". A saved template of yours with exactly one of those names is now hidden by the built-in; rename your `.md` file to bring it back.
+Your template's name matches a built-in one. Choose another name. Version 1.9.0 adds the built-in names "GPT Image 2.5" and "GPT Image 2.5 Edit". A saved template of yours with exactly one of those names is now hidden by the built-in; rename your `.md` file to bring it back.
 
 ## The model list is short or its names look different
 

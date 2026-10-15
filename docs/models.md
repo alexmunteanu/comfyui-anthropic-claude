@@ -2,7 +2,7 @@
 
 A template turns Claude into a prompt writer for one specific image or video model. It knows that model's prompt grammar: how it wants references tagged, whether it reads dialogue in quotes or braces, how an edit should name what changes and what stays. Pick the template for the model you will run next, type your idea in plain words, and the node returns a prompt ready to paste or wire into that model's node.
 
-Version 1.8.0 ships 97 built-in templates. This page covers the families most people use, then the rest in short. The template dropdown always holds the complete list.
+Version 1.9.0 ships 97 built-in templates. This page covers the families most people use, then the rest in short. The template dropdown always holds the complete list.
 
 ## Choosing a template
 
@@ -39,9 +39,11 @@ The default pick for general image work. Every Nano Banana template has a matchi
 
 | Template | Use it for |
 | --- | --- |
-| GPT Image 2.5 Flare | Fast, high-quality everyday generation. Exact on-screen text goes in quotation marks. |
-| GPT Image 2.5 Sunburst Edit | Precision edits that must protect identity, layout, labels, and lighting. One material change per pass. |
+| GPT Image 2.5 | New images with either GPT Image 2.5 model. Exact on-screen text goes in quotation marks. |
+| GPT Image 2.5 Edit | Edits with either GPT Image 2.5 model that must protect identity, layout, labels, and lighting. One material change per pass. |
 | GPT Image 2 / GPT Image 2 Edit | The previous generation, still widely used. |
+
+GPT Image 2.5 comes as two models, Flare and Sunburst, and both create and edit images. They take the same prompts, so one template serves both: choose the model on the OpenAI GPT Image 2.5 node. Flare is faster; Sunburst is slower with higher image quality and is OpenAI's pick when editing precision matters most. Templates named "GPT Image 2.5 Flare" and "GPT Image 2.5 Sunburst Edit" in older workflows open as these two.
 
 Repeated edits drift. The edit templates restate what must survive on every pass, but no prompt can promise pixel-identical areas, so composite the final result when an exact region matters.
 

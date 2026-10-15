@@ -65,8 +65,8 @@ BUILTIN_TEMPLATES = {'FLUX.2': 'flux.md',
  'Wan 3.0': 'wan_3-0.md',
  'FLUX 3 Image': 'flux_3_image.md',
  'FLUX 3 Image Edit': 'flux_3_image_edit.md',
- 'GPT Image 2.5 Flare': 'gpt_image_2_5_flare.md',
- 'GPT Image 2.5 Sunburst Edit': 'gpt_image_2_5_sunburst_edit.md',
+ 'GPT Image 2.5': 'gpt_image_2_5.md',
+ 'GPT Image 2.5 Edit': 'gpt_image_2_5_edit.md',
  'Ideogram 4.5': 'ideogram_4-5.md',
  'Nano Banana 2.1': 'nano_banana_2_1.md',
  'Nano Banana 2.1 Edit': 'nano_banana_2_1_edit.md',
@@ -137,7 +137,9 @@ LEGACY_TEMPLATE_ALIASES = {'FLUX': 'FLUX.2',
  'Sora 2 Edit': 'Sora 2 Edit (Retired)',
  'Veo 3 & 3.1': 'Veo 3.1',
  'Veo 3.1 (Retiring 2026-10-22)': 'Veo 3.1',
- 'Gemini Omni Flash': 'Gemini Omni Flash 1.1'}
+ 'Gemini Omni Flash': 'Gemini Omni Flash 1.1',
+ 'GPT Image 2.5 Flare': 'GPT Image 2.5',
+ 'GPT Image 2.5 Sunburst Edit': 'GPT Image 2.5 Edit'}
 
 RETIRED_TEMPLATES = {'Sora 2 & 2 Pro (Retired)': 'The Sora API was discontinued on 2026-09-24. Select an available '
                              'model template for new work.',

@@ -1,10 +1,10 @@
 """
 ComfyUI Anthropic Claude Node
 Custom node for calling the Anthropic Claude API with text and image inputs.
-© 2026 Created with ❤️ by Alex Munteanu | alexmunteanu.com
+© 2026 Created with ♥ by Alex Munteanu | alexmunteanu.com
 """
 
-VERSION = "1.5.25"
+VERSION = "1.7.0"
 
 WEB_DIRECTORY = "./js"
 
@@ -17,9 +17,12 @@ from .anthropic_claude_node import (
     _load_template,
     _list_all_template_names,
     _startup_warnings,
-    _api_error,
+    MAX_API_KEY_CHARS,
+    _bootstrap_stored_credential,
+    _credential_needs_bootstrap,
+    _credential_public_status,
     _refresh_models,
-    _set_session_api_key,
+    _save_validated_api_key,
 )
 
 from . import history_manager
@@ -38,51 +41,41 @@ try:
     from server import PromptServer
     from aiohttp import web
 
-    # Reading the history means touching the disk, and doing that inside an
-    # async handler runs it on the same loop that serves every other ComfyUI
-    # request, so one slow listing stalls the whole server. The work goes to
-    # a small pool of worker threads instead. The pool is deliberately small:
-    # an unlimited one would simply move the problem from the loop to the
-    # disk and to memory.
+
     _executor = concurrent.futures.ThreadPoolExecutor(
         max_workers=4, thread_name_prefix="anthropic-claude-history")
+    _credential_bootstrap_task = None
 
-    # How many pieces of disk work may run at once, and how long a request
-    # will wait for a turn before giving up. The wait is the important half:
-    # without it, a burst is turned away the instant the workers are busy,
-    # which sounds even-handed and is not.
+
     MAX_IN_FLIGHT = 4
     SLOT_WAIT_SECONDS = 2.0
 
-    # Most distinct scans that may be shared at once. Entries are removed as
-    # they finish, so this only ever caps a pathological spread of queries.
+
     MAX_SHARED_CALLS = 64
 
-    # Marks "no worker came free in time" so it cannot be confused with a
-    # piece of work that legitimately produced no result.
+
     _BUSY = object()
 
     _slots = None
     _slots_loop = None
     _shared_calls = {}
 
-    # Listing and statistics both read the whole store. Repeats within this
-    # window reuse the last answer, so a burst costs one pass rather than one
-    # per request. Kept short because it is only there to absorb bursts, and
-    # cleared outright whenever something changes.
+
     CACHE_TTL_SECONDS = 2.0
     MAX_CACHED_RESULTS = 32
     _result_cache = {}
 
-    # Longest API key accepted from the error modal. Real keys are around a
-    # hundred characters.
-    MAX_API_KEY_CHARS = 512
 
-    # An address is an id and a date. A few hundred bytes is generous; the
-    # limit is here so a body is never decoded before its size is known.
+    _cache_epoch = 0
+
+
+    MAX_CREDENTIAL_BODY_BYTES = MAX_API_KEY_CHARS * 4 + 1024
+    _credential_save_active = False
+
+
     MAX_ADDRESS_BODY_BYTES = 4096
-    # A template body is its content plus the JSON around it, and JSON escapes
-    # can double a string, so this allows for that on top of the content cap.
+
+
     MAX_TEMPLATE_BODY_BYTES = MAX_TEMPLATE_BYTES * 2 + 8192
 
     def _get_slots():
@@ -137,6 +130,25 @@ try:
         """
         return await _run_with_slot(func, args, kwargs)
 
+    async def _run_credential_bootstrap():
+        """Validate the saved key in the background without blocking health."""
+        global _credential_bootstrap_task
+        try:
+            await _offload(_bootstrap_stored_credential)
+        except Exception:
+            logging.exception("Credential bootstrap failed")
+        finally:
+            if _credential_bootstrap_task is asyncio.current_task():
+                _credential_bootstrap_task = None
+
+    def _start_credential_bootstrap():
+        """Coalesce concurrent first-health bootstrap requests."""
+        global _credential_bootstrap_task
+        task = _credential_bootstrap_task
+        if task is None or task.done():
+            task = asyncio.create_task(_run_credential_bootstrap())
+            _credential_bootstrap_task = task
+
     async def _offload_shared(key, func, *args, **kwargs):
         """Let identical requests arriving together share one run.
 
@@ -150,35 +162,42 @@ try:
         that CHANGES something must not be shared: two clicks on the same
         favourite would come back with one answer between them and one of the
         two changes would quietly vanish.
+
+        A run that began before the store last changed is not reused. It is
+        left alone for the callers already waiting on it, because they asked
+        before the change and a listing taken while the store moves is the
+        weak consistency this store documents; but a caller arriving after the
+        change starts a fresh run rather than joining that one, so it cannot
+        be handed an answer describing an entry it knows was deleted.
         """
         run = _shared_calls.get(key)
+        if run is not None and run["epoch"] != _cache_epoch:
+
+
+            run = None
         started_it = run is None
         if started_it:
             if len(_shared_calls) >= MAX_SHARED_CALLS:
-                return await _offload(func, *args, **kwargs)
+
+
+                epoch = _cache_epoch
+                result = await _offload(func, *args, **kwargs)
+                if result is not _BUSY and epoch == _cache_epoch:
+                    _cache_put(key, result)
+                return result
             loop = asyncio.get_running_loop()
             started = asyncio.Event()
-            run = {"task": None, "started": started, "waiting": 0}
+            run = {"task": None, "started": started, "waiting": 0,
+                   "epoch": _cache_epoch}
             run["task"] = loop.create_task(
                 _run_with_slot(func, args, kwargs, started))
             _shared_calls[key] = run
-            run["task"].add_done_callback(functools.partial(_finish_shared, key))
+            run["task"].add_done_callback(
+                functools.partial(_finish_shared, key, run))
         run["waiting"] += 1
         try:
-            # Shielded either way, so one caller giving up, which a closed
-            # browser tab does, cannot cancel work the others still want.
-            #
-            # Whoever started the run sees it through. Its wait for a worker
-            # is already limited inside the run itself, and once it has one,
-            # cutting the answer short would throw away work that is nearly
-            # done and report "busy" to the one request that was not waiting
-            # on anybody. Reading the whole store takes noticeably longer when
-            # several reads run at once, so a limit here would fire on exactly
-            # the requests that were being served properly.
-            #
-            # Anyone who merely joined an existing run does get a limit: they
-            # did not start this work, and if what they joined has stalled,
-            # waiting on it is no better than waiting for a worker.
+
+
             if started_it:
                 return await asyncio.shield(run["task"])
             return await asyncio.wait_for(
@@ -187,34 +206,38 @@ try:
             return _BUSY
         finally:
             run["waiting"] -= 1
-            # Nobody is waiting on this any more. If it has not taken a worker
-            # yet, drop it. Letting it go on to read the whole store for an
-            # answer no one will ever see would keep that worker from the next
-            # person in the queue, and a flood of abandoned reads starving
-            # everyone else is precisely the failure this wait exists to fix.
-            # Once it HAS a worker it is left alone: the read cannot be
-            # stopped anyway, and its answer is worth keeping for the retry.
+
+
             if (run["waiting"] <= 0 and not run["started"].is_set()
                     and not run["task"].done()):
                 run["task"].cancel()
 
-    def _finish_shared(key, task):
+    def _finish_shared(key, run, task):
         """Retire a finished run and keep its answer for whoever asks next.
 
         Remembering the answer here rather than in the route matters when a
         caller gave up waiting: the run carries on, its result is kept, and
         the retry that the 503 asked for is answered from memory instead of
-        starting the same scan over again.
+        starting the same scan over again. This is the ONLY place a shared
+        run's answer is remembered, which is what lets one test decide whether
+        it may be.
+
+        Two things are settled before anything is written. The key is cleared
+        only while it still names this run, so a run that was replaced cannot
+        unregister its successor on the way out. And the answer is kept only
+        while the store has not changed since the run began, so a scan that
+        started before a delete cannot put the deleted entry back.
         """
-        _shared_calls.pop(key, None)
+        if _shared_calls.get(key) is run:
+            _shared_calls.pop(key, None)
         if task.cancelled():
             return
-        # Reading the exception also marks it as seen, which is what stops a
-        # failed run from being reported later as an error nobody looked at.
+
+
         if task.exception() is not None:
             return
         result = task.result()
-        if result is not _BUSY:
+        if result is not _BUSY and run["epoch"] == _cache_epoch:
             _cache_put(key, result)
 
     def _guarded(handler):
@@ -236,8 +259,8 @@ try:
         return wrapper
 
     def _busy_response():
-        # Retry-After is set on the response rather than passed in, so it is
-        # attached whichever way the response object was built.
+
+
         response = web.json_response({"error": "Busy, try again"}, status=503)
         response.headers["Retry-After"] = "1"
         return response
@@ -257,9 +280,19 @@ try:
         _result_cache[key] = (time.monotonic() + CACHE_TTL_SECONDS, value)
 
     def _cache_clear():
+        """Forget every remembered answer, and retire the scans in flight.
+
+        Bumping the count is what makes the second half true. Emptying the
+        dictionary on its own leaves a full-store scan that began before the
+        change still running, and it finishes afterwards and writes its
+        pre-change answer straight back in. The bump marks that run as
+        belonging to a store that no longer exists, so nobody joins it and
+        nothing it produces is kept.
+        """
+        global _cache_epoch
+        _cache_epoch += 1
         _result_cache.clear()
 
-    # -- Origin --
 
     def _same_origin(request):
         """False when the request says it came from a different site.
@@ -267,9 +300,8 @@ try:
         A browser attaches Origin to every cross-site request and cannot be
         talked out of it, so an Origin naming somewhere else is proof the call
         did not come from this server's own page. No Origin means it was not a
-        cross-site browser request at all: a local script has none, and a local
-        script can read CLAUDE_API_KEY straight out of the environment anyway,
-        so refusing it would protect nothing.
+        cross-site browser request at all. Local scripts and command-line clients
+        have none, so refusing them would break normal local integrations.
 
         This check is NOT turned off by --enable-cors-header. That flag exists
         so other tools can call ComfyUI, and it replaces ComfyUI's own origin
@@ -287,10 +319,8 @@ try:
         default port out of Origin.
         """
         origin = request.headers.get("Origin")
-        # Absent and present-but-empty are different things. Absent means it
-        # was not a cross-site browser request. An Origin that is there but
-        # names nothing cannot be matched against anything, so it is refused
-        # rather than waved through.
+
+
         if origin is None:
             return True
         host = request.headers.get("Host", "")
@@ -312,7 +342,6 @@ try:
     def _foreign_origin_response():
         return web.json_response({"error": "Cross-site request refused"}, status=403)
 
-    # -- Request helpers --
 
     async def _read_body(request, max_bytes):
         """The whole raw body, or None if it is bigger than max_bytes.
@@ -396,7 +425,6 @@ try:
             return None, None
         return entry_id, date
 
-    # -- Template routes --
 
     def _create_template_exclusive(path, payload):
         """Create a template only if that name is free."""
@@ -422,10 +450,8 @@ try:
             return _too_large_response()
         name = data.get("name", "")
         content = data.get("content", "")
-        # An existing template is only replaced when the request says so.
-        # A template becomes the system prompt for the user's own billed
-        # calls, so silently replacing one changes what they are paying for
-        # without telling them.
+
+
         overwrite = data.get("overwrite") is True
         if not isinstance(name, str) or not isinstance(content, str):
             return web.json_response({"error": "Name and content must be text"}, status=400)
@@ -437,17 +463,13 @@ try:
             return web.json_response({"error": "Invalid name"}, status=400)
         if safe_name in BUILTIN_TEMPLATES or safe_name in LEGACY_TEMPLATE_ALIASES:
             return web.json_response({"error": "Name conflicts with a built-in template"}, status=400)
-        # Measured on the encoded bytes, which is what the reader limits too.
-        # Counting characters instead let a template of CJK text save happily
-        # at three bytes each and then read back as empty, because the reader
-        # refused it.
+
+
         payload = content.encode("utf-8")
         if len(payload) > MAX_TEMPLATE_BYTES:
             return web.json_response({"error": "Template is too large"}, status=413)
 
-        # Reaching the templates folder can mean creating it, and on a setup
-        # where the input folder lives on another drive that is a disk touch
-        # like any other, so it does not belong on the event loop.
+
         user_dir = await _offload(_get_user_templates_dir)
         if user_dir is _BUSY:
             return _busy_response()
@@ -493,10 +515,8 @@ try:
         names = await _offload(_list_all_template_names)
         if names is _BUSY:
             return _busy_response()
-        # "aliases" is additive and leaves "templates" unchanged. It lets the UI resolve a
-        # retired display name held in a saved workflow or a history entry to its current
-        # one, using the same single hop _load_template performs server-side. Alias keys
-        # are never listed in "templates".
+
+
         return web.json_response({
             "templates": names,
             "aliases": dict(LEGACY_TEMPLATE_ALIASES),
@@ -507,58 +527,139 @@ try:
     async def startup_warnings(request):
         if not _same_origin(request):
             return _foreign_origin_response()
-        # Reading the warnings no longer empties the list. Anything at all
-        # could fetch this route, and whatever did so first used to be handed
-        # the only copy, leaving the user with warnings they never saw. The
-        # list is cleared when a model refresh actually succeeds instead.
+
+
         return web.json_response({"warnings": list(_startup_warnings)})
+
+    def _credential_request_error(error_type, message):
+        public = _credential_public_status()
+        return {
+            "ok": False,
+            "status": "invalid",
+            "active_status": public["status"],
+            "error": {
+                "error_type": error_type,
+                "error": message,
+            },
+        }
 
     @PromptServer.instance.routes.get("/anthropic_claude/api_health")
     @_guarded
     async def api_health(request):
         if not _same_origin(request):
             return _foreign_origin_response()
-        return web.json_response(_api_error)
+        task = _credential_bootstrap_task
+        if task is not None and not task.done():
+            return web.json_response({
+                "ok": False,
+                "status": "checking",
+                "error_type": "",
+            })
+        if _credential_needs_bootstrap():
+            _start_credential_bootstrap()
+            return web.json_response({
+                "ok": False,
+                "status": "checking",
+                "error_type": "",
+            })
+        return web.json_response(_credential_public_status())
+
+    @PromptServer.instance.routes.post("/anthropic_claude/api_key")
+    @_guarded
+    async def save_api_key(request):
+        global _credential_save_active
+        if not _same_origin(request):
+            return _foreign_origin_response()
+        data = await _json_body(request, MAX_CREDENTIAL_BODY_BYTES)
+        if data is None:
+            return _too_large_response()
+        if "api_key" not in data:
+            return web.json_response(
+                _credential_request_error(
+                    "invalid_request",
+                    "API key required.",
+                ),
+                status=400,
+            )
+        api_key = data.get("api_key")
+        if not isinstance(api_key, str):
+            return web.json_response(
+                _credential_request_error(
+                    "invalid_request",
+                    "API key must be text.",
+                ),
+                status=400,
+            )
+        if not api_key or len(api_key) > MAX_API_KEY_CHARS:
+            return web.json_response(
+                _credential_request_error(
+                    "invalid_format",
+                    "Enter one API key without spaces.",
+                ),
+                status=400,
+            )
+        if _credential_save_active:
+            response = web.json_response(
+                {
+                    "ok": False,
+                    "status": "unavailable",
+                    "active_status": _credential_public_status()["status"],
+                    "error": {
+                        "error_type": "busy",
+                        "error": "A key check is already running.",
+                    },
+                },
+                status=409,
+            )
+            response.headers["Retry-After"] = "1"
+            return response
+
+        _credential_save_active = True
+        try:
+            result = await _offload(_save_validated_api_key, api_key)
+        finally:
+            _credential_save_active = False
+        if result is _BUSY:
+            return _busy_response()
+        if result.get("ok"):
+            return web.json_response(result)
+        status_code = 400
+        error_type = result.get("error", {}).get("error_type")
+        if error_type == "busy":
+            status_code = 409
+        elif result.get("status") == "unavailable":
+            status_code = 503
+        elif result.get("status") == "storage_error":
+            status_code = 500
+        response = web.json_response(result, status=status_code)
+        if status_code in (409, 503):
+            response.headers["Retry-After"] = "1"
+        return response
 
     @PromptServer.instance.routes.post("/anthropic_claude/refresh_models")
     @_guarded
     async def refresh_models(request):
-        # This route takes an API key and makes it outrank CLAUDE_API_KEY for
-        # the rest of the session, which is the one thing here a hostile page
-        # cannot already get by other means. See _same_origin for why the
-        # check is not waived under --enable-cors-header.
         if not _same_origin(request):
             return _foreign_origin_response()
         data = await _json_body(request)
         if data is None:
             return _too_large_response()
-        api_key = data.get("api_key", "")
-        if not isinstance(api_key, str):
-            return web.json_response({"error": "api_key must be a string"}, status=400)
-        if len(api_key) > MAX_API_KEY_CHARS:
-            return web.json_response({"error": "api_key is too long"}, status=400)
-        # Held in a module variable for this process only. Writing it to
-        # os.environ would persist it process-wide and hand it to every child
-        # process ComfyUI spawns.
-        # Assigned unconditionally: the session key outranks CLAUDE_API_KEY,
-        # so skipping the assignment on an empty value would leave a key
-        # mistyped into the error modal shadowing a working environment
-        # variable with no way back short of restarting ComfyUI.
-        _set_session_api_key(api_key.strip())
+        if data:
+            return web.json_response(
+                {"error": "Refresh does not accept credentials"},
+                status=400,
+            )
         display_names = await _offload(_refresh_models)
         if display_names is _BUSY:
             return _busy_response()
+        public = _credential_public_status()
         return web.json_response({
-            "ok": _api_error["ok"],
+            "ok": public["ok"],
+            "status": public["status"],
+            "error_type": public["error_type"],
             "models": display_names,
-            "error": _api_error,
         })
 
-    # -- History routes --
-    #
-    # Entries are named by id and date. No path is ever sent to the browser
-    # and none is ever accepted back, so there is no longer anything for a
-    # crafted path to reach.
 
     @PromptServer.instance.routes.get("/anthropic_claude/history/list")
     @_guarded
@@ -590,7 +691,8 @@ try:
             )
             if result is _BUSY:
                 return _busy_response()
-            _cache_put(key, result)
+
+
         return web.json_response(result)
 
     @PromptServer.instance.routes.get("/anthropic_claude/history/entry")
@@ -622,7 +724,7 @@ try:
         ok = await _offload(history_manager.delete_entry, entry_id, date)
         if ok is _BUSY:
             return _busy_response()
-        # The store changed, so any remembered listing or totals are wrong.
+
         _cache_clear()
         return web.json_response({"ok": ok})
 
@@ -655,7 +757,7 @@ try:
             stats = await _offload_shared(("stats",), history_manager.get_stats)
             if stats is _BUSY:
                 return _busy_response()
-            _cache_put(("stats",), stats)
+
         return web.json_response(stats)
 
     @PromptServer.instance.routes.get("/anthropic_claude/history/image")
@@ -668,19 +770,15 @@ try:
         index = query.get("index", "")
         if entry_id is None or not history_manager.valid_index(index):
             return web.Response(status=404)
-        # The thumbnail's location is worked out from the entry id, and the
-        # bytes are read and returned rather than the file being handed to
-        # the server to open again. Only JPEGs this node wrote can ever come
-        # back, and the browser is told not to guess at the type.
+
+
         data = await _offload(history_manager.read_image_bytes, entry_id, date, index)
         if data is _BUSY:
             return web.Response(status=503, headers={"Retry-After": "1"})
         if data is None:
             return web.Response(status=404)
-        # Content-Type is set through the header map rather than the
-        # content_type argument. aiohttp refuses both together, and the header
-        # map is where the previous release put it, so the check that the type
-        # is forced keeps testing the same thing.
+
+
         return web.Response(
             body=data,
             headers={
@@ -690,10 +788,8 @@ try:
         )
 
 except Exception:
-    # Swallowed so a route problem cannot stop ComfyUI from starting, but
-    # never silently: registration happens one route at a time, so a failure
-    # part way through leaves some routes live and others missing, and the UI
-    # then half works with nothing in the log to explain it.
+
+
     try:
         import logging as _logging
         _logging.getLogger(__name__).exception(

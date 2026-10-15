@@ -7,7 +7,7 @@ file's own name and the date is the folder it sits in, so the address always
 describes where the file actually is and nothing sent by the browser is ever
 used to build a path. Every read, write and delete goes through safe_fs.
 
-© 2026 Created with ❤️ by Alex Munteanu | alexmunteanu.com
+© 2026 Created with ♥ by Alex Munteanu | alexmunteanu.com
 """
 
 import os
@@ -26,29 +26,20 @@ from . import safe_fs
 
 THUMB_MAX_DIM = 300
 
-# The two folders this node owns inside ComfyUI's input directory. Checking
-# for redirects starts here: the input directory itself may legitimately be
-# moved with a junction, and refusing that broke relocated installs before.
+
 NODE_FOLDER = "comfyui_anthropic_claude"
 HISTORY_FOLDER = "history"
 
-# How much work one listing or statistics pass will do. Reaching it reports
-# truncated: true rather than quietly returning a short answer, because a
-# silent cap makes a user's own history look like it disappeared.
+
 MAX_SCAN_WORK = 20000
 
-# A 300px JPEG at quality 65 is a few tens of KB. This is far above any real
-# thumbnail and still refuses to load something large planted under the name.
+
 MAX_IMAGE_BYTES = 2 * 1024 * 1024
 
 MAX_SEARCH_CHARS = 200
 PREVIEW_CHARS = 150
 
-# The address of an entry, as written by _generate_entry_id: HHMMSS and six
-# hex characters of a uuid4.
-# Every pattern ends with \Z rather than $. In Python, $ also matches just
-# before a final newline, so "2026-08-17\n" would pass as a date and the
-# server would then echo that exact string back as the entry's address.
+
 ID_RE = re.compile(r"^[0-9]{6}_[0-9a-f]{6}\Z")
 DATE_RE = re.compile(r"^20[0-9]{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])\Z")
 INDEX_RE = re.compile(r"^[0-9]{1,2}\Z")
@@ -62,10 +53,6 @@ _DIGITS_RE = re.compile(r"^[0-9]+\Z")
 
 SORT_KEYS = ("date_desc", "date_asc", "cost_desc", "tokens_desc")
 
-
-# ---------------------------------------------------------------------------
-# Address validation
-# ---------------------------------------------------------------------------
 
 def valid_id(value):
     return isinstance(value, str) and bool(ID_RE.match(value))
@@ -92,10 +79,6 @@ def valid_index(value):
         return False
     return 0 <= int(value) <= MAX_IMAGE_INDEX
 
-
-# ---------------------------------------------------------------------------
-# Locating the store
-# ---------------------------------------------------------------------------
 
 def _input_root():
     return folder_paths.get_input_directory()
@@ -160,10 +143,6 @@ def _entry_path(entry_id, date):
 def _thumb_name(entry_id, index):
     return entry_id + "_" + str(index) + ".jpg"
 
-
-# ---------------------------------------------------------------------------
-# Saving
-# ---------------------------------------------------------------------------
 
 def _generate_entry_id():
     now = datetime.now()
@@ -241,10 +220,8 @@ def save_entry(data, image_tensor=None):
         "extended_thinking": data.get("extended_thinking", False),
         "thinking_budget": data.get("thinking_budget", 4096),
         "max_image_size": data.get("max_image_size", 1024),
-        # Nothing reads this any more. Thumbnails are found from the entry id.
-        # It stays in the file so that going back to the previous release,
-        # which does read it, still shows the thumbnails for entries written
-        # by this one.
+
+
         "image_paths": thumb_paths,
         "image_dimensions": img_dims,
         "response": data.get("response", ""),
@@ -259,18 +236,13 @@ def save_entry(data, image_tensor=None):
     }
 
     if not safe_fs.write_json_atomic(date_dir / (entry_id + ".json"), entry):
-        # The thumbnails were written first and are addressed through the
-        # entry id, so without the entry file nothing can ever reach them
-        # again. Take them back out rather than leave them on disk forever.
+
+
         for thumb in thumb_paths:
             safe_fs.unlink_if_regular(thumb)
         return None
     return entry_id
 
-
-# ---------------------------------------------------------------------------
-# Walking the store
-# ---------------------------------------------------------------------------
 
 def _sorted_names(directory, pattern, newest_first=True):
     names = [
@@ -306,8 +278,8 @@ def _iter_entries(progress, date_from="", date_to=""):
                     continue
                 if date_to and date_str > date_to:
                     continue
-                # Visiting a folder costs work too, so a store padded with
-                # empty day folders cannot spin this loop for free.
+
+
                 budget -= 1
                 if budget <= 0:
                     progress["truncated"] = True
@@ -352,10 +324,8 @@ def _summarize(entry):
         "favorite": entry["favorite"],
         "image_count": entry["image_count"],
         "has_thinking": bool(entry["thinking"]),
-        # Cut to the same length as the other previews. The row shows this in
-        # a single ellipsised line, so nothing is gained by sending more, and
-        # sending it whole let one crafted entry inflate a page of results by
-        # a thousandfold. The full text is still there in the entry itself.
+
+
         "error": entry["error"][:PREVIEW_CHARS] if entry["error"] else entry["error"],
     }
 
@@ -367,10 +337,6 @@ def _matches(entry, needle):
             or needle in entry["model"].lower()
             or needle in entry["template"].lower())
 
-
-# ---------------------------------------------------------------------------
-# Reading
-# ---------------------------------------------------------------------------
 
 def list_entries(page=1, per_page=20, search="", date_from="", date_to="",
                  favorites_only=False, sort_by="date_desc"):
@@ -399,9 +365,7 @@ def list_entries(page=1, per_page=20, search="", date_from="", date_to="",
             continue
         records.append(_summarize(entry))
 
-    # Ordering by date and id uses where the file actually lives rather than
-    # the timestamp written inside it, so an entry cannot push itself to the
-    # top of the list by claiming a time it was not written at.
+
     if sort_by == "date_asc":
         records.sort(key=lambda r: (r["date"], r["id"]))
     elif sort_by == "cost_desc":
@@ -488,10 +452,6 @@ def read_image_bytes(entry_id, date, index):
     return safe_fs.read_bytes_verified(path, MAX_IMAGE_BYTES)
 
 
-# ---------------------------------------------------------------------------
-# Changing
-# ---------------------------------------------------------------------------
-
 def delete_entry(entry_id, date):
     """Delete one entry and its own thumbnails. True if the entry is gone."""
     if not valid_id(entry_id) or not valid_date(date):
@@ -502,11 +462,7 @@ def delete_entry(entry_id, date):
             return False
         day_dir = path.parent
 
-        # Only files named after THIS entry are removed, and only from the day
-        # folder the entry itself sits in. Earlier releases deleted whatever
-        # the entry's own JSON listed, which let a planted entry name another
-        # entry's files and have them deleted along with it. Working the names
-        # out from the id instead makes that impossible to express.
+
         prefix = entry_id + "_"
         for child in safe_fs.scan_children(day_dir, want_dir=False):
             name = child.name
@@ -519,11 +475,7 @@ def delete_entry(entry_id, date):
         if not safe_fs.unlink_if_regular(path):
             return False
 
-        # Tidy up the day, month and year folders once they are empty. rmdir
-        # refuses a folder with anything in it, so there is nothing to test
-        # first and nothing to get wrong between testing and acting. The three
-        # steps are the three levels there are, so this cannot climb out of
-        # the history folder even if the comparison below were ever wrong.
+
         root = _history_root()
         parent = day_dir
         for _ in range(3):

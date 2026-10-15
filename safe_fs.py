@@ -66,7 +66,7 @@ gives up the moment the result would pass the cap. That bounds the memory used
 and the bytes written together, and it is why the cap is a parameter on the
 write rather than only on the read.
 
-© 2026 Created with ❤️ by Alex Munteanu | alexmunteanu.com
+© 2026 Created with ♥ by Alex Munteanu | alexmunteanu.com
 """
 
 import json
@@ -81,57 +81,35 @@ from contextlib import contextmanager
 from pathlib import Path
 
 
-# The name-surrogate bit of a Windows reparse tag. Set on junctions
-# (0xa0000003), volume mount points (also 0xa0000003) and symlinks
-# (0xa000000c), which all substitute one name for another. Not set on
-# Deduplication (0x80000013), OneDrive cloud files (0x9000001a) or app
-# execution aliases (0x8000001b), which leave the name alone.
-# Testing FILE_ATTRIBUTE_REPARSE_POINT instead would refuse all six.
 NAME_SURROGATE = 0x20000000
 
-# 256 KB per history file. The largest entry in a 1695-entry real store is
-# under 10 KB, so this is 26x headroom and still bounds a planted file.
+
 MAX_ENTRY_BYTES = 256 * 1024
 
-# Widest a single stored text field is kept at. The file cap above already
-# bounds the whole body; this stops one field from filling all of it.
+
 MAX_FIELD_CHARS = 200000
 
-# Thumbnails per entry. Matches the index range the image route accepts.
+
 MAX_IMAGES = 64
 
-# Characters that give a name power beyond naming one file in one folder:
-# the two separators, the drive and alternate-stream colon, the wildcards,
-# the redirection characters, and the control range.
+
 _UNSAFE_CHARS_RE = re.compile(r"[\x00-\x1f<>:\"/\\|?*]")
 
-# Windows treats these as devices whatever folder they sit in and whatever
-# extension follows, so CON.md opens the console rather than a file. The
-# dollar-suffixed console names and CLOCK$ count too, and so do COM0 and LPT0.
+
 _RESERVED_NAMES = frozenset(
     ["CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$", "CLOCK$"]
     + ["COM" + str(n) for n in range(0, 10)]
     + ["LPT" + str(n) for n in range(0, 10)]
 )
 
-# Windows reads the superscript digits as their plain forms when deciding
-# whether a name is a device, so COM<superscript one> is COM1. Python's
-# isalnum() says these are letters-or-digits, so the save-template sanitizer
-# keeps them and they would otherwise slip past the list above.
+
 _SUPERSCRIPT_DIGITS = {0xB9: "1", 0xB2: "2", 0xB3: "3"}
 
-# os.replace can lose a brief race with a search indexer or an antivirus
-# scanner holding the target open. Back off between tries instead of
-# hammering: a tight loop is over in a few milliseconds and gives those
-# handles no time to close. Total wait is about one second.
+
 _REPLACE_BACKOFF = (0.01, 0.05, 0.15, 0.3, 0.5)
 
 _O_BINARY = getattr(os, "O_BINARY", 0)
 
-
-# ---------------------------------------------------------------------------
-# Link detection
-# ---------------------------------------------------------------------------
 
 def is_link(st):
     """True when a stat result describes something that redirects elsewhere.
@@ -176,10 +154,6 @@ def is_safe_component(name):
     stem = name.split(".")[0].strip().upper().translate(_SUPERSCRIPT_DIGITS)
     return stem not in _RESERVED_NAMES
 
-
-# ---------------------------------------------------------------------------
-# Traversal
-# ---------------------------------------------------------------------------
 
 def scan_children(directory, want_dir=False):
     """Yield the directory's children that are safe to use.
@@ -283,10 +257,6 @@ def ensure_dir_chain(root, components):
     return current
 
 
-# ---------------------------------------------------------------------------
-# Reading
-# ---------------------------------------------------------------------------
-
 def read_bytes_verified(path, max_bytes):
     """Read a plain file, or return None. Never raises.
 
@@ -364,9 +334,8 @@ def read_entry_verified(path, max_bytes=MAX_ENTRY_BYTES):
     except (ValueError, UnicodeDecodeError):
         return None
     except RecursionError:
-        # A body nested thousands of levels deep exhausts the decoder's own
-        # stack. That is neither a ValueError nor a UnicodeDecodeError, and
-        # letting it out would take the whole listing down with it.
+
+
         return None
     if not isinstance(decoded, dict):
         return None
@@ -403,10 +372,6 @@ def set_entry_flag(path, key, value, max_bytes=MAX_ENTRY_BYTES):
     return write_json_atomic(path, body, max_bytes)
 
 
-# ---------------------------------------------------------------------------
-# Normalization
-# ---------------------------------------------------------------------------
-
 def _as_text(value, limit=MAX_FIELD_CHARS):
     if not isinstance(value, str):
         return ""
@@ -435,9 +400,8 @@ def _as_float(value, default, low, high):
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return default
     number = float(value)
-    # Infinity and NaN survive json.loads and come back out of json.dumps as
-    # the bare tokens Infinity and NaN, which JSON.parse in the browser
-    # rejects outright. One planted entry would break the whole listing.
+
+
     if not math.isfinite(number):
         return default
     if number < low:
@@ -492,8 +456,8 @@ def _normalize_entry(raw):
     dimensions = _as_dimensions(raw.get("image_dimensions"))
     count = len(dimensions)
     if not count:
-        # Entries written before dimensions were recorded still list their
-        # thumbnails. Only the length of that list is used, never a path.
+
+
         stored = raw.get("image_paths")
         if isinstance(stored, list):
             count = min(len(stored), MAX_IMAGES)
@@ -525,10 +489,6 @@ def _normalize_entry(raw):
         "favorite": raw.get("favorite") is True,
     }
 
-
-# ---------------------------------------------------------------------------
-# Writing
-# ---------------------------------------------------------------------------
 
 def _encode_bounded(obj, max_bytes):
     """Encode obj as JSON, giving up as soon as it would pass max_bytes.
@@ -595,12 +555,7 @@ def write_bytes_atomic(path, payload):
     if not isinstance(payload, (bytes, bytearray)):
         return False
 
-    # The temporary name has to fit in the same 255-character limit as the
-    # real one, and it adds eighteen characters of its own. Without trimming,
-    # a long but perfectly legal name can be created and then never replaced,
-    # because only the replace path builds a temporary sibling. The random
-    # part keeps the trimmed name unique, and the exclusive create catches a
-    # collision anyway.
+
     suffix = "." + uuid.uuid4().hex[:12] + ".tmp"
     stem = target.name[:254 - len(suffix)]
     temp = target.parent / ("." + stem + suffix)
@@ -684,10 +639,6 @@ def unlink_if_regular(path):
     except OSError:
         return False
 
-
-# ---------------------------------------------------------------------------
-# Per-entry serialization
-# ---------------------------------------------------------------------------
 
 _entry_locks = {}
 _entry_locks_guard = threading.Lock()

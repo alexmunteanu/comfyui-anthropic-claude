@@ -5,8 +5,14 @@
     {
       "id": 1,
       "type": "AnthropicClaudeNode",
-      "pos": [200, 200],
-      "size": [400, 470],
+      "pos": [
+        200,
+        200
+      ],
+      "size": [
+        400,
+        470
+      ],
       "flags": {},
       "order": 0,
       "mode": 0,
@@ -22,13 +28,17 @@
         {
           "name": "response",
           "type": "STRING",
-          "links": [1],
+          "links": [
+            1
+          ],
           "slot_index": 0
         },
         {
           "name": "thinking",
           "type": "STRING",
-          "links": [2],
+          "links": [
+            2
+          ],
           "slot_index": 1
         }
       ],
@@ -37,10 +47,10 @@
       },
       "widgets_values": [
         "A serene mountain lake at golden hour, mist rising off the still water, distant snow-capped peaks",
-        "Sonnet 4.6",
+        "Sonnet 5.5",
         739204185613097,
         "fixed",
-        "None",
+        "Nano Banana 2.1",
         "",
         1.0,
         4096,
@@ -52,8 +62,14 @@
     {
       "id": 2,
       "type": "PreviewAny",
-      "pos": [680, 200],
-      "size": [320, 180],
+      "pos": [
+        680,
+        200
+      ],
+      "size": [
+        320,
+        180
+      ],
       "flags": {},
       "order": 1,
       "mode": 0,
@@ -73,8 +89,14 @@
     {
       "id": 3,
       "type": "PreviewAny",
-      "pos": [680, 420],
-      "size": [320, 180],
+      "pos": [
+        680,
+        420
+      ],
+      "size": [
+        320,
+        180
+      ],
       "flags": {},
       "order": 2,
       "mode": 0,
@@ -93,8 +115,22 @@
     }
   ],
   "links": [
-    [1, 1, 0, 2, 0, "STRING"],
-    [2, 1, 1, 3, 0, "STRING"]
+    [
+      1,
+      1,
+      0,
+      2,
+      0,
+      "STRING"
+    ],
+    [
+      2,
+      1,
+      1,
+      3,
+      0,
+      "STRING"
+    ]
   ],
   "groups": [],
   "config": {},

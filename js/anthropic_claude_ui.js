@@ -1,12 +1,6 @@
-/*
- * Anthropic Claude Node - UI customization
- * © 2026 Created with ❤️ by Alex Munteanu | alexmunteanu.com
- */
+// © 2026 Created with ♥ by Alex Munteanu | alexmunteanu.com
 import { app } from "../../scripts/app.js";
 
-/* -----------------------------------------------------------------------
- * Shared UI helpers
- * ----------------------------------------------------------------------- */
 
 function showInputDialog(title, callback) {
     var overlay = document.createElement("div");
@@ -107,10 +101,7 @@ function showToast(msg, isError) {
     }, 2500);
 }
 
-/* Saving asks before replacing a template that already exists. A template
- * becomes the system prompt for the user's own billed calls, so replacing one
- * without asking changes what they are paying for. The server answers 409 when
- * the name is taken and the request did not say to replace it. */
+
 function _postTemplate(name, content, overwrite, onSaved) {
     var status = 0;
     fetch("/anthropic_claude/save_template", {
@@ -156,25 +147,22 @@ function checkStartupWarnings() {
         .catch(function () {});
 }
 
-/* -----------------------------------------------------------------------
- * API Error Modal
- * ----------------------------------------------------------------------- */
 
 var _apiErrorModalShown = false;
 var _apiErrorOverlay = null;
 var _apiErrorMsgEl = null;
 var _apiErrorRetryBtn = null;
-var _apiErrorKeyInput = null;
 var _apiErrorNode = null;
 var _apiRetrySuccessTime = 0;
 
 var _apiErrorMessages = {
-    auth_error: "Your Anthropic API key is invalid or expired.\nCheck your CLAUDE_API_KEY environment variable.",
-    missing_key: "No API key found.\nSet the CLAUDE_API_KEY environment variable.",
+    auth_error: "The saved Anthropic API key is invalid.",
+    missing_key: "Add and validate an Anthropic API key on the node.",
     missing_package: "The 'anthropic' package is not installed.\nRun: pip install anthropic",
-    connection_error: "Cannot reach the Anthropic API.\nCheck your internet connection.",
-    rate_limit: "You've been rate limited by the Anthropic API.\nWait a moment and try again.",
-    unknown: "Something went wrong connecting to the Anthropic API."
+    provider_unavailable: "Anthropic is temporarily unavailable.",
+    catalog_error: "The Anthropic model catalogue is unavailable.",
+    rate_limit: "Anthropic is rate limiting requests.\nWait and retry.",
+    unknown: "Could not connect to the Anthropic API."
 };
 
 function _createApiErrorModal() {
@@ -190,24 +178,6 @@ function _createApiErrorModal() {
 
     var msg = document.createElement("div");
     msg.style.cssText = "font-size:13px;line-height:1.6;color:#94a3b8;margin-bottom:12px;white-space:pre-line;";
-
-    var keyLabel = document.createElement("div");
-    keyLabel.style.cssText = "font-size:12px;color:#94a3b8;margin-bottom:4px;";
-    keyLabel.textContent = "API Key (paste to update without restarting):";
-
-    var keyInput = document.createElement("input");
-    keyInput.type = "password";
-    keyInput.placeholder = "sk-ant-...";
-    keyInput.style.cssText = "width:100%;box-sizing:border-box;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:5px;color:#e2e8f0;font-size:13px;font-family:monospace;outline:none;margin-bottom:16px;";
-    keyInput.onfocus = function () { keyInput.style.borderColor = "#2563eb"; };
-    keyInput.onblur = function () { keyInput.style.borderColor = "#334155"; };
-    // Ignored while a retry is already running, so holding Enter cannot start
-    // a second attempt that overlaps the first.
-    keyInput.onkeydown = function (e) {
-        if (e.key === "Enter" && _apiErrorRetryBtn && !_apiErrorRetryBtn.disabled) {
-            _retryApiConnection();
-        }
-    };
 
     var btnRow = document.createElement("div");
     btnRow.style.cssText = "display:flex;justify-content:flex-end;gap:8px;";
@@ -226,8 +196,6 @@ function _createApiErrorModal() {
     btnRow.appendChild(retryBtn);
     box.appendChild(title);
     box.appendChild(msg);
-    box.appendChild(keyLabel);
-    box.appendChild(keyInput);
     box.appendChild(btnRow);
     overlay.appendChild(box);
 
@@ -236,7 +204,6 @@ function _createApiErrorModal() {
     _apiErrorOverlay = overlay;
     _apiErrorMsgEl = msg;
     _apiErrorRetryBtn = retryBtn;
-    _apiErrorKeyInput = keyInput;
     return overlay;
 }
 
@@ -257,57 +224,151 @@ function _closeApiErrorModal() {
     }
 }
 
+var _credentialControls = [];
+var _credentialHealthTimer = null;
+var _credentialLastStatus = {
+    ok: false,
+    status: "missing",
+    error_type: ""
+};
+
+var _credentialStatusLabels = {
+    checking: "Key: Checking...",
+    valid: "Key: Ready",
+    missing: "Key: Not set",
+    invalid: "Key: Invalid",
+    unavailable: "Key: Unavailable",
+    storage_error: "Key: Save failed"
+};
+
+var _credentialStatusColors = {
+    checking: "#eab308",
+    valid: "#16a34a",
+    missing: "#94a3b8",
+    invalid: "#f87171",
+    unavailable: "#f97316",
+    storage_error: "#f87171"
+};
+
+function _updateModelWidget(widget, models) {
+    if (!widget || !models || !models.length) return;
+    widget.options.values = models;
+    if (models.indexOf(widget.value) !== -1) return;
+    var sonnet = null;
+    for (var i = 0; i < models.length; i++) {
+        if (models[i].indexOf("Sonnet") === 0) {
+            sonnet = models[i];
+            break;
+        }
+    }
+    widget.value = sonnet || models[0];
+}
+
+function _syncCredentialControls(info, models, checking) {
+    if (info && !checking) {
+        _credentialLastStatus = {
+            ok: info.ok === true,
+            status: info.status || "missing",
+            error_type: info.error_type || ""
+        };
+    }
+    var status = checking ? "checking" : _credentialLastStatus.status;
+    var label = _credentialStatusLabels[status] || _credentialStatusLabels.missing;
+    var color = _credentialStatusColors[status] || _credentialStatusColors.missing;
+    for (var i = 0; i < _credentialControls.length; i++) {
+        var control = _credentialControls[i];
+        control.statusEl.textContent = label;
+        control.statusEl.style.color = color;
+        control.button.disabled = checking === true;
+        _updateModelWidget(control.modelWidget, models);
+        if (control.node && control.node.setDirtyCanvas) {
+            control.node.setDirtyCanvas(true, true);
+        }
+    }
+}
+
+function _registerCredentialControl(node, statusEl, button, modelWidget) {
+    var control = {
+        node: node,
+        statusEl: statusEl,
+        button: button,
+        modelWidget: modelWidget
+    };
+    _credentialControls.push(control);
+    _syncCredentialControls(_credentialLastStatus);
+    return control;
+}
+
+function _unregisterCredentialControl(node) {
+    var kept = [];
+    for (var i = 0; i < _credentialControls.length; i++) {
+        if (_credentialControls[i].node !== node) kept.push(_credentialControls[i]);
+    }
+    _credentialControls = kept;
+}
+
+function _saveCredential(input) {
+    var candidate = input.value.trim();
+    if (!candidate) {
+        input.value = "";
+        showToast("Enter an API key", true);
+        return;
+    }
+    var payload = JSON.stringify({ api_key: candidate });
+    candidate = "";
+    input.value = "";
+    _syncCredentialControls(null, null, true);
+
+    var requestStatus = 0;
+    fetch("/anthropic_claude/api_key", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload
+    }).then(function (response) {
+        requestStatus = response.status;
+        return response.json();
+    }).then(function (data) {
+        input.value = "";
+        var activeStatus = (data && data.active_status)
+            || (data && data.status)
+            || _credentialLastStatus.status;
+        _syncCredentialControls({
+            ok: activeStatus === "valid",
+            status: activeStatus,
+            error_type: data && data.error && data.error.error_type
+        }, data && data.models);
+        if (requestStatus === 200 && data && data.ok) {
+            showToast("API key saved", false);
+            return;
+        }
+        var message = data && data.error && data.error.error;
+        showToast(message || "Could not save API key", true);
+    }).catch(function () {
+        input.value = "";
+        _syncCredentialControls(_credentialLastStatus);
+        showToast("Could not reach the local API", true);
+    });
+}
+
 function _retryApiConnection() {
-    // The status belongs to THIS attempt. Held in a module variable it was
-    // shared, so a second attempt started before the first answered could
-    // leave the first handler reading the second one's status.
     var retryStatus = 0;
     _apiErrorRetryBtn.textContent = "Retrying...";
     _apiErrorRetryBtn.disabled = true;
-    var body = {};
-    if (_apiErrorKeyInput && _apiErrorKeyInput.value.trim()) {
-        body.api_key = _apiErrorKeyInput.value.trim();
-    }
+    _syncCredentialControls(null, null, true);
     fetch("/anthropic_claude/refresh_models", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
+        body: "{}"
     })
-        .then(function (r) { retryStatus = r.status; return r.json(); })
-        .then(function (d) {
+        .then(function (response) {
+            retryStatus = response.status;
+            return response.json();
+        })
+        .then(function (data) {
             _apiErrorRetryBtn.textContent = "Retry Connection";
             _apiErrorRetryBtn.disabled = false;
-            // A refused request answers with a plain message rather than the
-            // usual status object, so it is read as a message.
-            if (retryStatus !== 200) {
-                _apiErrorMsgEl.textContent =
-                    (d && typeof d.error === "string" && d.error) || _apiErrorMessages.unknown;
-                return;
-            }
-            if (d.ok) {
-                if (d.models && d.models.length && _apiErrorNode) {
-                    var modelWidget = null;
-                    for (var i = 0; i < _apiErrorNode.widgets.length; i++) {
-                        if (_apiErrorNode.widgets[i].name === "model") {
-                            modelWidget = _apiErrorNode.widgets[i];
-                            break;
-                        }
-                    }
-                    if (modelWidget) {
-                        modelWidget.options.values = d.models;
-                        if (d.models.indexOf(modelWidget.value) === -1) {
-                            var sonnet = null;
-                            for (var j = 0; j < d.models.length; j++) {
-                                if (d.models[j].indexOf("Sonnet") === 0) {
-                                    sonnet = d.models[j];
-                                    break;
-                                }
-                            }
-                            modelWidget.value = sonnet || d.models[0];
-                        }
-                    }
-                }
-                if (_apiErrorKeyInput) _apiErrorKeyInput.value = "";
+            _syncCredentialControls(data, data && data.models);
+            if (retryStatus === 200 && data && data.ok) {
                 if (_apiErrorNode && _apiErrorNode._acErrorLine) {
                     _apiErrorNode._acErrorLine.style.display = "none";
                     _apiErrorNode._errorText = null;
@@ -315,31 +376,41 @@ function _retryApiConnection() {
                 _apiRetrySuccessTime = Date.now();
                 _apiErrorModalShown = false;
                 _closeApiErrorModal();
-                showToast("API connected. Models refreshed.", false);
-            } else {
-                var info = d.error || {};
-                _apiErrorMsgEl.textContent =
-                    _apiErrorMessages[info.error_type] || info.error || _apiErrorMessages.unknown;
+                showToast("Models refreshed", false);
+                return;
             }
+            _apiErrorMsgEl.textContent =
+                _apiErrorMessages[data && data.error_type]
+                || _apiErrorMessages.unknown;
         })
         .catch(function () {
             _apiErrorRetryBtn.textContent = "Retry Connection";
             _apiErrorRetryBtn.disabled = false;
+            _syncCredentialControls(_credentialLastStatus);
             _apiErrorMsgEl.textContent = "Network error. Check your connection.";
         });
 }
 
-function _checkApiHealth(node) {
-    if (_apiErrorModalShown) return;
+function _checkApiHealth() {
     fetch("/anthropic_claude/api_health")
-        .then(function (r) { return r.json(); })
+        .then(function (response) { return response.json(); })
         .then(function (info) {
-            if (!info.ok) {
-                _apiErrorModalShown = true;
-                _showApiErrorModal(info, node);
+            var checking = info && info.status === "checking";
+            _syncCredentialControls(info, null, checking);
+            if (checking && !_credentialHealthTimer) {
+                _credentialHealthTimer = setTimeout(function () {
+                    _credentialHealthTimer = null;
+                    _checkApiHealth();
+                }, 500);
             }
         })
-        .catch(function () {});
+        .catch(function () {
+            _syncCredentialControls({
+                ok: false,
+                status: "unavailable",
+                error_type: "provider_unavailable"
+            });
+        });
 }
 
 function _copyToClipboard(text) {
@@ -361,16 +432,12 @@ function _copyToClipboard(text) {
     }
 }
 
-/* -----------------------------------------------------------------------
- * History Modal
- * ----------------------------------------------------------------------- */
 
 var _histStylesInjected = false;
 var _histOverlay = null;
 var _histCurrentNode = null;
 var _histDebounce = null;
-/* Entries are addressed by id and date. The server never sends a file path and
- * never accepts one back, so every call below carries the pair instead. */
+
 var _histState = {
     page: 1, perPage: 20, search: "", dateFrom: "", dateTo: "",
     favoritesOnly: false, sortBy: "date_desc",
@@ -492,7 +559,7 @@ function _createHistoryModal() {
     var modal = document.createElement("div");
     modal.className = "ach-modal";
 
-    // Header
+
     var header = document.createElement("div");
     header.className = "ach-header";
     var title = document.createElement("span");
@@ -509,7 +576,7 @@ function _createHistoryModal() {
     header.appendChild(stats);
     header.appendChild(closeBtn);
 
-    // Toolbar
+
     var toolbar = document.createElement("div");
     toolbar.className = "ach-toolbar";
 
@@ -581,11 +648,11 @@ function _createHistoryModal() {
     toolbar.appendChild(sortSel);
     toolbar.appendChild(favBtn);
 
-    // List
+
     var list = document.createElement("div");
     list.className = "ach-list";
 
-    // Pagination
+
     var pagination = document.createElement("div");
     pagination.className = "ach-pagination";
     var prevBtn = document.createElement("button");
@@ -711,10 +778,8 @@ function _fetchHistoryList() {
             _histState.totalPages = d.total_pages;
             _renderHistoryList(d.entries);
             if (d.truncated) {
-                // Says nothing about counts or which end was cut. The server
-                // stops after a fixed amount of work, so what is missing
-                // depends on the search and the sort order, and naming a
-                // number would be wrong in most of them.
+
+
                 var note = document.createElement("div");
                 note.className = "ach-note";
                 note.textContent = "Older entries were not included. Narrow the date range to reach them.";
@@ -747,7 +812,7 @@ function _renderHistoryEntry(entry) {
     el.setAttribute("data-id", entry.id);
     el.setAttribute("data-date", entry.date);
 
-    // Head row
+
     var head = document.createElement("div");
     head.className = "ach-entry-head";
 
@@ -816,7 +881,7 @@ function _renderHistoryEntry(entry) {
     };
     head.appendChild(delBtn);
 
-    // Preview
+
     var preview = document.createElement("div");
     preview.className = "ach-entry-preview";
     var promptPre = document.createElement("div");
@@ -833,7 +898,7 @@ function _renderHistoryEntry(entry) {
     el.appendChild(head);
     el.appendChild(preview);
 
-    // Click to expand
+
     var clickArea = function (e) {
         if (e.target.tagName === "BUTTON") return;
         var detail = el.querySelector(".ach-detail");
@@ -851,7 +916,7 @@ function _renderHistoryEntry(entry) {
 }
 
 function _expandEntry(entryId, date, el) {
-    // Collapse any previously expanded
+    
     var prev = _histEls.list.querySelector(".ach-detail");
     if (prev) prev.parentNode.removeChild(prev);
 
@@ -862,9 +927,7 @@ function _expandEntry(entryId, date, el) {
     placeholder.innerHTML = '<div style="color:#64748b;font-size:12px;padding:8px">Loading...</div>';
     el.appendChild(placeholder);
 
-    // Failure is decided by the response status, not by the body. An entry
-    // that recorded an API error carries its own "error" field, and testing
-    // that would report every one of those as missing.
+
     var status = 0;
     fetch("/anthropic_claude/history/entry?id=" + encodeURIComponent(entryId)
         + "&date=" + encodeURIComponent(date))
@@ -884,7 +947,7 @@ function _expandEntry(entryId, date, el) {
 function _renderDetail(entry, container) {
     container.innerHTML = "";
 
-    // Settings row + Load Settings button
+
     var settings = document.createElement("div");
     settings.className = "ach-detail-settings";
     var settingItems = [
@@ -909,8 +972,7 @@ function _renderDetail(entry, container) {
     settings.appendChild(loadBtn);
     container.appendChild(settings);
 
-    // Images. The address of each thumbnail is the entry's own id plus the
-    // slot number, so no path is needed to fetch one.
+
     if (entry.image_count > 0) {
         var imgBox = document.createElement("div");
         imgBox.className = "ach-detail-images";
@@ -944,7 +1006,7 @@ function _renderDetail(entry, container) {
         container.appendChild(imgBox);
     }
 
-    // Prompt
+
     var promptSec = document.createElement("div");
     promptSec.className = "ach-detail-section";
     var promptLabel = document.createElement("div");
@@ -954,7 +1016,7 @@ function _renderDetail(entry, container) {
     promptSec.appendChild(_createTextBlock(entry.prompt || "(empty)", entry.prompt || ""));
     container.appendChild(promptSec);
 
-    // Response
+
     if (entry.response) {
         var respSec = document.createElement("div");
         respSec.className = "ach-detail-section";
@@ -966,7 +1028,7 @@ function _renderDetail(entry, container) {
         container.appendChild(respSec);
     }
 
-    // Error
+
     if (entry.error) {
         var errSec = document.createElement("div");
         errSec.className = "ach-detail-section";
@@ -982,7 +1044,7 @@ function _renderDetail(entry, container) {
         container.appendChild(errSec);
     }
 
-    // Thinking
+
     if (entry.thinking) {
         var thinkSec = document.createElement("div");
         thinkSec.className = "ach-detail-section ach-detail-thinking collapsed";
@@ -1083,19 +1145,11 @@ function _deleteEntry(entryId, date, entryEl) {
     });
 }
 
-/* Retired template display names mapped to their current ones, fetched alongside the
- * template list. Mirrors LEGACY_TEMPLATE_ALIASES on the server so a history entry saved
- * under a retired name still restores. The dropdown itself never lists alias keys.
- * _templateAliasesLoaded separates "no aliases apply" from "never fetched": an empty map
- * cannot resolve anything, and reporting that as a missing template would be false. */
+
 var _templateAliases = {};
 var _templateAliasesLoaded = false;
 
-/* Resolve a saved template name against the live dropdown values, in the same order the
- * server uses: a live name wins outright, otherwise one hop through the alias map.
- * Returns null when the name cannot be resolved. History entries come off disk and may
- * not be ours, so a non-string name is rejected up front: indexOf compares strictly while
- * hasOwnProperty coerces to a string key, and the two must not disagree. */
+
 function _resolveTemplateName(name, values) {
     if (typeof name !== "string" || !name || !values) return null;
     if (values.indexOf(name) !== -1) return name;
@@ -1106,10 +1160,7 @@ function _resolveTemplateName(name, values) {
     return null;
 }
 
-/* Set the template widget from a saved name. When the name does not resolve and the alias
- * map has never loaded, reuse the refresh that populates the dropdown and try once more,
- * so an in-flight or failed initial fetch is not reported as a missing template. One
- * retry, guarded by isRetry; never a loop. */
+
 function _restoreTemplateWidget(w, savedName, node, isRetry) {
     var values = (w.options && w.options.values) ? w.options.values : null;
     var resolved = _resolveTemplateName(savedName, values);
@@ -1192,9 +1243,6 @@ function _loadSettings(entry) {
     showToast("Settings loaded from history", false);
 }
 
-/* -----------------------------------------------------------------------
- * API Status Polling
- * ----------------------------------------------------------------------- */
 
 var _apiStatus = "unknown";
 var _statusDots = [];
@@ -1256,9 +1304,6 @@ function startApiStatusPolling() {
     setInterval(fetchApiStatus, 60000);
 }
 
-/* -----------------------------------------------------------------------
- * Node Extension
- * ----------------------------------------------------------------------- */
 
 function syncDisableState(node) {
     var instructionsConnected = false;
@@ -1300,10 +1345,12 @@ app.registerExtension({
                 var templateWidget = null;
                 var instructionsWidget = null;
                 var promptWidget = null;
+                var modelWidget = null;
                 for (var w = 0; w < this.widgets.length; w++) {
                     if (this.widgets[w].name === "template") templateWidget = this.widgets[w];
                     if (this.widgets[w].name === "instructions") instructionsWidget = this.widgets[w];
                     if (this.widgets[w].name === "prompt") promptWidget = this.widgets[w];
+                    if (this.widgets[w].name === "model") modelWidget = this.widgets[w];
                 }
 
                 var seedWidget = null;
@@ -1333,6 +1380,73 @@ app.registerExtension({
                         node.setDirtyCanvas(true, true);
                     }
                 });
+
+                var credentialContainer = document.createElement("div");
+                credentialContainer.style.cssText = "width:100%;box-sizing:border-box;padding:4px 10px 8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;";
+
+                var credentialRow = document.createElement("div");
+                credentialRow.style.cssText = "display:flex;gap:6px;align-items:center;";
+
+                var credentialInput = document.createElement("input");
+                credentialInput.type = "password";
+                credentialInput.value = "";
+                credentialInput.placeholder = "Anthropic API key";
+                credentialInput.autocomplete = "off";
+                credentialInput.spellcheck = false;
+                credentialInput.setAttribute("aria-label", "Anthropic API key");
+                credentialInput.style.cssText = "flex:1;min-width:0;box-sizing:border-box;padding:7px 9px;background:#1a1a2e;border:1px solid #445;border-radius:4px;color:#eee;font-size:12px;outline:none;";
+                credentialInput.onfocus = function () {
+                    credentialInput.style.borderColor = "#6677aa";
+                };
+                credentialInput.onblur = function () {
+                    credentialInput.style.borderColor = "#445";
+                };
+
+                var credentialButton = document.createElement("button");
+                credentialButton.textContent = "Save & validate";
+                credentialButton.style.cssText = "padding:7px 10px;background:#445577;border:1px solid #556688;border-radius:4px;color:#eef;cursor:pointer;font-size:12px;white-space:nowrap;";
+                credentialButton.onclick = function () {
+                    _saveCredential(credentialInput);
+                };
+
+                var credentialStatus = document.createElement("div");
+                credentialStatus.textContent = "Key: Checking...";
+                credentialStatus.style.cssText = "padding-top:4px;color:#eab308;font-size:11px;";
+
+                credentialRow.appendChild(credentialInput);
+                credentialRow.appendChild(credentialButton);
+                credentialContainer.appendChild(credentialRow);
+                credentialContainer.appendChild(credentialStatus);
+
+                var credentialWidget = this.addDOMWidget(
+                    "credential_control",
+                    "custom",
+                    credentialContainer,
+                    { hideOnZoom: false, serialize: false }
+                );
+                credentialWidget.serialize = false;
+                credentialWidget.serializeValue = function () {
+                    return undefined;
+                };
+                delete credentialWidget.computeLayoutSize;
+                credentialWidget.computeSize = function () {
+                    return [0, 62];
+                };
+                _registerCredentialControl(
+                    node,
+                    credentialStatus,
+                    credentialButton,
+                    modelWidget
+                );
+
+                var previousRemoved = this.onRemoved;
+                this.onRemoved = function () {
+                    credentialInput.value = "";
+                    _unregisterCredentialControl(node);
+                    if (previousRemoved) {
+                        previousRemoved.apply(this, arguments);
+                    }
+                };
 
                 function refreshTemplateList(selectName) {
                     if (!templateWidget) return null;
@@ -1430,12 +1544,8 @@ app.registerExtension({
                     hideOnZoom: false,
                     serialize: false
                 });
-                // Classic mode: computeSize makes the footer FIXED in
-                // _arrangeWidgets, so textareas (GROWABLE via computeLayoutSize)
-                // absorb remaining space.
-                // Nodes 2.0: deleting computeLayoutSize makes hasLayoutSize
-                // false, so the grid row is min-content (footer doesn't grow).
-                // Textareas get auto rows via shouldExpand("customtext").
+
+
                 delete footerWidget.computeLayoutSize;
                 footerWidget.computeSize = function () {
                     var h = FOOTER_H - 4;
@@ -1455,7 +1565,7 @@ app.registerExtension({
                 syncDisableState(this);
                 checkStartupWarnings();
                 startApiStatusPolling();
-                _checkApiHealth(this);
+                _checkApiHealth();
             };
 
             var onConnectionsChange = proto.onConnectionsChange;
@@ -1484,17 +1594,18 @@ app.registerExtension({
                     if (output.error && output.error[0]) {
                         this._errorText = output.error[0];
                         var errLower = this._errorText.toLowerCase();
-                        if (errLower.indexOf("invalid api key") !== -1) {
+                        if (errLower.indexOf("invalid api key") !== -1
+                            || errLower.indexOf("saved anthropic api key is invalid") !== -1) {
                             _showApiErrorModal({error_type: "auth_error"}, this);
                         } else if (errLower.indexOf("rate limit") !== -1) {
                             _showApiErrorModal({error_type: "rate_limit", error: "You've been rate limited by the Anthropic API. Wait a moment and try again."}, this);
-                        } else if (errLower.indexOf("claude_api_key") !== -1) {
+                        } else if (errLower.indexOf("add and validate an anthropic api key") !== -1) {
                             _showApiErrorModal({error_type: "missing_key"}, this);
                         }
                     } else {
                         this._errorText = null;
                     }
-                    // Update DOM footer
+                    
                     if (this._acCostSpan) {
                         this._acCostSpan.textContent = this._costText || "---";
                         this._acCostSpan.style.color = this._costText ? "#FFD700" : "#556677";
@@ -1511,7 +1622,7 @@ app.registerExtension({
                             this._acErrorLine.style.display = "none";
                         }
                     }
-                    // Grow node height in classic mode if error line overflows
+                    
                     var minSize = this.computeSize();
                     if (this.size[1] < minSize[1]) {
                         this.setSize([this.size[0], minSize[1]]);

@@ -83,18 +83,13 @@ from pathlib import Path
 
 NAME_SURROGATE = 0x20000000
 
-
 MAX_ENTRY_BYTES = 256 * 1024
-
 
 MAX_FIELD_CHARS = 200000
 
-
 MAX_IMAGES = 64
 
-
 _UNSAFE_CHARS_RE = re.compile(r"[\x00-\x1f<>:\"/\\|?*]")
-
 
 _RESERVED_NAMES = frozenset(
     ["CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$", "CLOCK$"]
@@ -102,9 +97,7 @@ _RESERVED_NAMES = frozenset(
     + ["LPT" + str(n) for n in range(0, 10)]
 )
 
-
 _SUPERSCRIPT_DIGITS = {0xB9: "1", 0xB2: "2", 0xB3: "3"}
-
 
 _REPLACE_BACKOFF = (0.01, 0.05, 0.15, 0.3, 0.5)
 
@@ -334,8 +327,6 @@ def read_entry_verified(path, max_bytes=MAX_ENTRY_BYTES):
     except (ValueError, UnicodeDecodeError):
         return None
     except RecursionError:
-
-
         return None
     if not isinstance(decoded, dict):
         return None
@@ -400,8 +391,6 @@ def _as_float(value, default, low, high):
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return default
     number = float(value)
-
-
     if not math.isfinite(number):
         return default
     if number < low:
@@ -456,8 +445,6 @@ def _normalize_entry(raw):
     dimensions = _as_dimensions(raw.get("image_dimensions"))
     count = len(dimensions)
     if not count:
-
-
         stored = raw.get("image_paths")
         if isinstance(stored, list):
             count = min(len(stored), MAX_IMAGES)
@@ -554,7 +541,6 @@ def write_bytes_atomic(path, payload):
         return False
     if not isinstance(payload, (bytes, bytearray)):
         return False
-
 
     suffix = "." + uuid.uuid4().hex[:12] + ".tmp"
     stem = target.name[:254 - len(suffix)]

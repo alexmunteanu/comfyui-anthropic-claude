@@ -4,7 +4,7 @@ Custom node for calling the Anthropic Claude API with text and image inputs.
 © 2026 Created with ♥ by Alex Munteanu | alexmunteanu.com
 """
 
-VERSION = "1.7.0"
+VERSION = "1.8.0"
 
 WEB_DIRECTORY = "./js"
 
@@ -41,18 +41,14 @@ try:
     from server import PromptServer
     from aiohttp import web
 
-
     _executor = concurrent.futures.ThreadPoolExecutor(
         max_workers=4, thread_name_prefix="anthropic-claude-history")
     _credential_bootstrap_task = None
 
-
     MAX_IN_FLIGHT = 4
     SLOT_WAIT_SECONDS = 2.0
 
-
     MAX_SHARED_CALLS = 64
-
 
     _BUSY = object()
 
@@ -60,22 +56,16 @@ try:
     _slots_loop = None
     _shared_calls = {}
 
-
     CACHE_TTL_SECONDS = 2.0
     MAX_CACHED_RESULTS = 32
     _result_cache = {}
 
-
     _cache_epoch = 0
-
 
     MAX_CREDENTIAL_BODY_BYTES = MAX_API_KEY_CHARS * 4 + 1024
     _credential_save_active = False
 
-
     MAX_ADDRESS_BODY_BYTES = 4096
-
-
     MAX_TEMPLATE_BODY_BYTES = MAX_TEMPLATE_BYTES * 2 + 8192
 
     def _get_slots():
@@ -172,14 +162,10 @@ try:
         """
         run = _shared_calls.get(key)
         if run is not None and run["epoch"] != _cache_epoch:
-
-
             run = None
         started_it = run is None
         if started_it:
             if len(_shared_calls) >= MAX_SHARED_CALLS:
-
-
                 epoch = _cache_epoch
                 result = await _offload(func, *args, **kwargs)
                 if result is not _BUSY and epoch == _cache_epoch:
@@ -196,8 +182,6 @@ try:
                 functools.partial(_finish_shared, key, run))
         run["waiting"] += 1
         try:
-
-
             if started_it:
                 return await asyncio.shield(run["task"])
             return await asyncio.wait_for(
@@ -206,8 +190,6 @@ try:
             return _BUSY
         finally:
             run["waiting"] -= 1
-
-
             if (run["waiting"] <= 0 and not run["started"].is_set()
                     and not run["task"].done()):
                 run["task"].cancel()
@@ -232,8 +214,6 @@ try:
             _shared_calls.pop(key, None)
         if task.cancelled():
             return
-
-
         if task.exception() is not None:
             return
         result = task.result()
@@ -259,8 +239,6 @@ try:
         return wrapper
 
     def _busy_response():
-
-
         response = web.json_response({"error": "Busy, try again"}, status=503)
         response.headers["Retry-After"] = "1"
         return response
@@ -319,8 +297,6 @@ try:
         default port out of Origin.
         """
         origin = request.headers.get("Origin")
-
-
         if origin is None:
             return True
         host = request.headers.get("Host", "")
@@ -450,8 +426,6 @@ try:
             return _too_large_response()
         name = data.get("name", "")
         content = data.get("content", "")
-
-
         overwrite = data.get("overwrite") is True
         if not isinstance(name, str) or not isinstance(content, str):
             return web.json_response({"error": "Name and content must be text"}, status=400)
@@ -463,12 +437,9 @@ try:
             return web.json_response({"error": "Invalid name"}, status=400)
         if safe_name in BUILTIN_TEMPLATES or safe_name in LEGACY_TEMPLATE_ALIASES:
             return web.json_response({"error": "Name conflicts with a built-in template"}, status=400)
-
-
         payload = content.encode("utf-8")
         if len(payload) > MAX_TEMPLATE_BYTES:
             return web.json_response({"error": "Template is too large"}, status=413)
-
 
         user_dir = await _offload(_get_user_templates_dir)
         if user_dir is _BUSY:
@@ -515,8 +486,6 @@ try:
         names = await _offload(_list_all_template_names)
         if names is _BUSY:
             return _busy_response()
-
-
         return web.json_response({
             "templates": names,
             "aliases": dict(LEGACY_TEMPLATE_ALIASES),
@@ -527,8 +496,6 @@ try:
     async def startup_warnings(request):
         if not _same_origin(request):
             return _foreign_origin_response()
-
-
         return web.json_response({"warnings": list(_startup_warnings)})
 
     def _credential_request_error(error_type, message):
@@ -653,10 +620,13 @@ try:
         if display_names is _BUSY:
             return _busy_response()
         public = _credential_public_status()
+        error_type = public["error_type"]
+        if public["status"] == "missing":
+            error_type = "missing_key"
         return web.json_response({
             "ok": public["ok"],
             "status": public["status"],
-            "error_type": public["error_type"],
+            "error_type": error_type,
             "models": display_names,
         })
 
@@ -691,8 +661,6 @@ try:
             )
             if result is _BUSY:
                 return _busy_response()
-
-
         return web.json_response(result)
 
     @PromptServer.instance.routes.get("/anthropic_claude/history/entry")
@@ -724,7 +692,6 @@ try:
         ok = await _offload(history_manager.delete_entry, entry_id, date)
         if ok is _BUSY:
             return _busy_response()
-
         _cache_clear()
         return web.json_response({"ok": ok})
 
@@ -757,7 +724,6 @@ try:
             stats = await _offload_shared(("stats",), history_manager.get_stats)
             if stats is _BUSY:
                 return _busy_response()
-
         return web.json_response(stats)
 
     @PromptServer.instance.routes.get("/anthropic_claude/history/image")
@@ -770,15 +736,11 @@ try:
         index = query.get("index", "")
         if entry_id is None or not history_manager.valid_index(index):
             return web.Response(status=404)
-
-
         data = await _offload(history_manager.read_image_bytes, entry_id, date, index)
         if data is _BUSY:
             return web.Response(status=503, headers={"Retry-After": "1"})
         if data is None:
             return web.Response(status=404)
-
-
         return web.Response(
             body=data,
             headers={
@@ -788,8 +750,6 @@ try:
         )
 
 except Exception:
-
-
     try:
         import logging as _logging
         _logging.getLogger(__name__).exception(

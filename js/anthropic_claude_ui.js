@@ -101,7 +101,6 @@ function showToast(msg, isError) {
     }, 2500);
 }
 
-
 function _postTemplate(name, content, overwrite, onSaved) {
     var status = 0;
     fetch("/anthropic_claude/save_template", {
@@ -157,6 +156,9 @@ var _apiRetrySuccessTime = 0;
 
 var _apiErrorMessages = {
     auth_error: "The saved Anthropic API key is invalid.",
+    permission_error: "The saved Anthropic API key cannot list models. Check the key's permissions on platform.claude.com, then save it again.",
+    invalid: "The saved API key file is not valid. Save your key again on the node.",
+    storage_error: "The saved API key file could not be read. Save your key again on the node.",
     missing_key: "Add and validate an Anthropic API key on the node.",
     missing_package: "The 'anthropic' package is not installed.\nRun: pip install anthropic",
     provider_unavailable: "Anthropic is temporarily unavailable.",
@@ -437,7 +439,6 @@ var _histStylesInjected = false;
 var _histOverlay = null;
 var _histCurrentNode = null;
 var _histDebounce = null;
-
 var _histState = {
     page: 1, perPage: 20, search: "", dateFrom: "", dateTo: "",
     favoritesOnly: false, sortBy: "date_desc",
@@ -559,7 +560,6 @@ function _createHistoryModal() {
     var modal = document.createElement("div");
     modal.className = "ach-modal";
 
-
     var header = document.createElement("div");
     header.className = "ach-header";
     var title = document.createElement("span");
@@ -575,7 +575,6 @@ function _createHistoryModal() {
     header.appendChild(title);
     header.appendChild(stats);
     header.appendChild(closeBtn);
-
 
     var toolbar = document.createElement("div");
     toolbar.className = "ach-toolbar";
@@ -648,10 +647,8 @@ function _createHistoryModal() {
     toolbar.appendChild(sortSel);
     toolbar.appendChild(favBtn);
 
-
     var list = document.createElement("div");
     list.className = "ach-list";
-
 
     var pagination = document.createElement("div");
     pagination.className = "ach-pagination";
@@ -778,8 +775,6 @@ function _fetchHistoryList() {
             _histState.totalPages = d.total_pages;
             _renderHistoryList(d.entries);
             if (d.truncated) {
-
-
                 var note = document.createElement("div");
                 note.className = "ach-note";
                 note.textContent = "Older entries were not included. Narrow the date range to reach them.";
@@ -811,7 +806,6 @@ function _renderHistoryEntry(entry) {
     el.className = "ach-entry";
     el.setAttribute("data-id", entry.id);
     el.setAttribute("data-date", entry.date);
-
 
     var head = document.createElement("div");
     head.className = "ach-entry-head";
@@ -881,7 +875,6 @@ function _renderHistoryEntry(entry) {
     };
     head.appendChild(delBtn);
 
-
     var preview = document.createElement("div");
     preview.className = "ach-entry-preview";
     var promptPre = document.createElement("div");
@@ -897,7 +890,6 @@ function _renderHistoryEntry(entry) {
 
     el.appendChild(head);
     el.appendChild(preview);
-
 
     var clickArea = function (e) {
         if (e.target.tagName === "BUTTON") return;
@@ -916,7 +908,6 @@ function _renderHistoryEntry(entry) {
 }
 
 function _expandEntry(entryId, date, el) {
-    
     var prev = _histEls.list.querySelector(".ach-detail");
     if (prev) prev.parentNode.removeChild(prev);
 
@@ -926,7 +917,6 @@ function _expandEntry(entryId, date, el) {
     placeholder.className = "ach-detail";
     placeholder.innerHTML = '<div style="color:#64748b;font-size:12px;padding:8px">Loading...</div>';
     el.appendChild(placeholder);
-
 
     var status = 0;
     fetch("/anthropic_claude/history/entry?id=" + encodeURIComponent(entryId)
@@ -946,7 +936,6 @@ function _expandEntry(entryId, date, el) {
 
 function _renderDetail(entry, container) {
     container.innerHTML = "";
-
 
     var settings = document.createElement("div");
     settings.className = "ach-detail-settings";
@@ -971,7 +960,6 @@ function _renderDetail(entry, container) {
     loadBtn.onclick = function () { _loadSettings(entry); };
     settings.appendChild(loadBtn);
     container.appendChild(settings);
-
 
     if (entry.image_count > 0) {
         var imgBox = document.createElement("div");
@@ -1006,7 +994,6 @@ function _renderDetail(entry, container) {
         container.appendChild(imgBox);
     }
 
-
     var promptSec = document.createElement("div");
     promptSec.className = "ach-detail-section";
     var promptLabel = document.createElement("div");
@@ -1015,7 +1002,6 @@ function _renderDetail(entry, container) {
     promptSec.appendChild(promptLabel);
     promptSec.appendChild(_createTextBlock(entry.prompt || "(empty)", entry.prompt || ""));
     container.appendChild(promptSec);
-
 
     if (entry.response) {
         var respSec = document.createElement("div");
@@ -1027,7 +1013,6 @@ function _renderDetail(entry, container) {
         respSec.appendChild(_createTextBlock(entry.response, entry.response));
         container.appendChild(respSec);
     }
-
 
     if (entry.error) {
         var errSec = document.createElement("div");
@@ -1043,7 +1028,6 @@ function _renderDetail(entry, container) {
         errSec.appendChild(errText);
         container.appendChild(errSec);
     }
-
 
     if (entry.thinking) {
         var thinkSec = document.createElement("div");
@@ -1145,10 +1129,8 @@ function _deleteEntry(entryId, date, entryEl) {
     });
 }
 
-
 var _templateAliases = {};
 var _templateAliasesLoaded = false;
-
 
 function _resolveTemplateName(name, values) {
     if (typeof name !== "string" || !name || !values) return null;
@@ -1160,11 +1142,17 @@ function _resolveTemplateName(name, values) {
     return null;
 }
 
-
-function _restoreTemplateWidget(w, savedName, node, isRetry) {
+function _restoreTemplateWidget(w, savedName, node, isRetry, fromWorkflow) {
     var values = (w.options && w.options.values) ? w.options.values : null;
     var resolved = _resolveTemplateName(savedName, values);
     if (resolved) {
+        if (fromWorkflow) {
+            if (resolved !== savedName && w.value === savedName) {
+                w.value = resolved;
+                node.setDirtyCanvas(true, true);
+            }
+            return;
+        }
         w.value = resolved;
         if (w.callback) w.callback(resolved);
         return;
@@ -1173,12 +1161,13 @@ function _restoreTemplateWidget(w, savedName, node, isRetry) {
         var pending = node._acRefreshTemplateList();
         if (pending && pending.then) {
             pending.then(function () {
-                _restoreTemplateWidget(w, savedName, node, true);
+                _restoreTemplateWidget(w, savedName, node, true, fromWorkflow);
                 node.setDirtyCanvas(true, true);
             });
             return;
         }
     }
+    if (fromWorkflow) return;
     if (!_templateAliasesLoaded) {
         showToast("Template list has not loaded yet, template not restored", true);
     } else {
@@ -1544,8 +1533,6 @@ app.registerExtension({
                     hideOnZoom: false,
                     serialize: false
                 });
-
-
                 delete footerWidget.computeLayoutSize;
                 footerWidget.computeSize = function () {
                     var h = FOOTER_H - 4;
@@ -1579,6 +1566,17 @@ app.registerExtension({
                 syncDisableState(this);
             };
 
+            var onConfigure = proto.onConfigure;
+            proto.onConfigure = function () {
+                if (onConfigure) {
+                    onConfigure.apply(this, arguments);
+                }
+                var w = this._acTemplateWidget;
+                if (w && typeof w.value === "string" && w.value) {
+                    _restoreTemplateWidget(w, w.value, this, false, true);
+                }
+            };
+
             var onExecuted = proto.onExecuted;
             proto.onExecuted = function (output) {
                 if (onExecuted) {
@@ -1592,6 +1590,8 @@ app.registerExtension({
                         this._usageText = output.usage[0];
                     }
                     if (output.error && output.error[0]) {
+                        this._costText = (output.cost && output.cost[0]) || null;
+                        this._usageText = (output.usage && output.usage[0]) || null;
                         this._errorText = output.error[0];
                         var errLower = this._errorText.toLowerCase();
                         if (errLower.indexOf("invalid api key") !== -1
@@ -1605,7 +1605,6 @@ app.registerExtension({
                     } else {
                         this._errorText = null;
                     }
-                    
                     if (this._acCostSpan) {
                         this._acCostSpan.textContent = this._costText || "---";
                         this._acCostSpan.style.color = this._costText ? "#FFD700" : "#556677";
@@ -1622,7 +1621,6 @@ app.registerExtension({
                             this._acErrorLine.style.display = "none";
                         }
                     }
-                    
                     var minSize = this.computeSize();
                     if (this.size[1] < minSize[1]) {
                         this.setSize([this.size[0], minSize[1]]);

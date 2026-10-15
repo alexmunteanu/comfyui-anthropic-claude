@@ -37,14 +37,11 @@ except ImportError:
 
 _SECRET_RE = re.compile(r"sk-[A-Za-z0-9_\-]{6,}")
 
-
 _CREDENTIALS_RE = re.compile(r"//[^/\s:@]+:[^/\s@]+@")
-
 
 _SEG_INNER = r"[^\\/\r\n\"']"
 _SEG_LAST = r"[^\s\\/\r\n\"']"
 _TAIL = "(?:" + _SEG_LAST + r"*(?: " + _SEG_LAST + r"+)*?\.[A-Za-z0-9]{1,8}|" + _SEG_LAST + "*)"
-
 
 _WINPATH_RE = re.compile(
     r"(?<![A-Za-z])[A-Za-z]:[\\/](?:" + _SEG_INNER + r"*[\\/])*" + _TAIL)
@@ -104,8 +101,6 @@ def _list_all_template_names():
         return names
     user_names = []
     for child in safe_fs.scan_children(user_dir, want_dir=False):
-
-
         if not child.name.lower().endswith(".md"):
             continue
         if not safe_fs.is_safe_component(child.name):
@@ -138,8 +133,6 @@ def _read_template_file(directory, filename):
         text = raw.decode("utf-8")
     except UnicodeDecodeError:
         return ""
-
-
     return text.replace("\r\n", "\n").replace("\r", "\n")
 
 
@@ -178,7 +171,6 @@ MODEL_PRICING_EXACT = {
     "claude-sonnet-4-5-20250929": (3.00, 15.00),
 }
 
-
 MODEL_PRICING_PRESERVED_EXACT = {
     "claude-fable-5": (10.00, 50.00),
     "claude-mythos-5": (10.00, 50.00),
@@ -200,7 +192,6 @@ MODEL_PRICING_PRESERVED_EXACT = {
     "claude-3-5-haiku": (0.80, 4.00),
     "claude-3-haiku": (0.25, 1.25),
 }
-
 
 MODEL_PRICING_FAMILY = [
     ("fable", 10.00, 50.00),
@@ -1026,7 +1017,6 @@ def _tensor_to_base64_images(image_tensor, max_dim=1024):
 
 _response_cache = {}
 
-
 MAX_CACHED_RESPONSES = 64
 
 
@@ -1083,8 +1073,10 @@ def _compute_cache_key(prompt, model, seed, images=None, instructions=None,
     ):
         add_field(value)
     if images is not None:
-        add_field(tuple(int(dimension) for dimension in images.shape))
-        add_field(images.cpu().numpy().tobytes()[:4096])
+        pixels = np.ascontiguousarray(images.detach().cpu().numpy())
+        add_field(tuple(int(dimension) for dimension in pixels.shape))
+        add_field(str(pixels.dtype))
+        add_field(hashlib.sha256(pixels.reshape(-1).view(np.uint8)).digest())
     return h.hexdigest()
 
 
@@ -1240,6 +1232,29 @@ class AnthropicClaudeNode(io.ComfyNode):
         )
 
     @classmethod
+    def validate_inputs(cls, template=None):
+        """Accept a saved legacy template name that the combo list no longer shows.
+
+        Naming `template` here makes ComfyUI skip its built-in combo-list check
+        for that one input; every other input keeps the built-in validation.
+        A workflow saved before a template was renamed still carries the old
+        display name, and execute() resolves it in one hop through the registry,
+        so rejecting it here would block a run the node can serve. Names are
+        matched only against the registry dicts and the user template list;
+        nothing from the value is ever turned into a path.
+        """
+        if template is None:
+            return True
+        if not isinstance(template, str):
+            return "Value not in list: template"
+        if template in BUILTIN_TEMPLATES or template in LEGACY_TEMPLATE_ALIASES:
+            return True
+        if template in _list_all_template_names():
+            return True
+        shown = template if len(template) <= 200 else template[:200] + "..."
+        return f"Value not in list: template: {shown!r}"
+
+    @classmethod
     def fingerprint_inputs(cls, prompt, model, seed, images=None, template=None,
                            instructions=None, temperature=1.0, max_tokens=4096,
                            extended_thinking=False, thinking_budget=4096,
@@ -1288,7 +1303,6 @@ class AnthropicClaudeNode(io.ComfyNode):
                 )
         model = _resolve_model(model)
 
-
         if not ANTHROPIC_AVAILABLE:
             err = "ERROR: 'anthropic' package not installed. Run: pip install anthropic"
             return io.NodeOutput(err, "", ui={"text": [err], "usage": ["N/A"], "error": [err]})
@@ -1316,7 +1330,6 @@ class AnthropicClaudeNode(io.ComfyNode):
                 ui={"text": [err], "usage": ["N/A"], "error": [err]},
             )
 
-
         cache_key = _compute_cache_key(
             prompt, model, seed, images, instructions,
             temperature, max_tokens, extended_thinking, thinking_budget,
@@ -1333,7 +1346,6 @@ class AnthropicClaudeNode(io.ComfyNode):
                 "cached": ["true"],
                 "error": [""],
             })
-
 
         content = []
 
@@ -1353,7 +1365,6 @@ class AnthropicClaudeNode(io.ComfyNode):
 
         content.append({"type": "text", "text": prompt})
 
-
         kwargs = _build_request_kwargs(
             model,
             content,
@@ -1363,7 +1374,6 @@ class AnthropicClaudeNode(io.ComfyNode):
             extended_thinking,
             thinking_budget,
         )
-
 
         t_start = time.time()
         api_error = None
@@ -1398,7 +1408,6 @@ class AnthropicClaudeNode(io.ComfyNode):
                 ui={"text": [api_error], "usage": ["N/A"], "error": [api_error]},
             )
 
-
         response_text = ""
         thinking_text = ""
 
@@ -1413,7 +1422,6 @@ class AnthropicClaudeNode(io.ComfyNode):
         usage_str = f"In: {input_tokens} | Out: {output_tokens} tokens"
         cost = _calculate_cost(model, input_tokens, output_tokens)
         cost_str = _format_cost(cost, exact=_price_is_exact(model))
-
 
         _cache_response(
             cache_key,
@@ -1447,8 +1455,6 @@ class AnthropicClaudeExtension(ComfyExtension):
 
     @override
     async def on_load(self) -> None:
-
-
         pass
 
 

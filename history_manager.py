@@ -26,19 +26,15 @@ from . import safe_fs
 
 THUMB_MAX_DIM = 300
 
-
 NODE_FOLDER = "comfyui_anthropic_claude"
 HISTORY_FOLDER = "history"
 
-
 MAX_SCAN_WORK = 20000
-
 
 MAX_IMAGE_BYTES = 2 * 1024 * 1024
 
 MAX_SEARCH_CHARS = 200
 PREVIEW_CHARS = 150
-
 
 ID_RE = re.compile(r"^[0-9]{6}_[0-9a-f]{6}\Z")
 DATE_RE = re.compile(r"^20[0-9]{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])\Z")
@@ -220,8 +216,6 @@ def save_entry(data, image_tensor=None):
         "extended_thinking": data.get("extended_thinking", False),
         "thinking_budget": data.get("thinking_budget", 4096),
         "max_image_size": data.get("max_image_size", 1024),
-
-
         "image_paths": thumb_paths,
         "image_dimensions": img_dims,
         "response": data.get("response", ""),
@@ -236,8 +230,6 @@ def save_entry(data, image_tensor=None):
     }
 
     if not safe_fs.write_json_atomic(date_dir / (entry_id + ".json"), entry):
-
-
         for thumb in thumb_paths:
             safe_fs.unlink_if_regular(thumb)
         return None
@@ -278,8 +270,6 @@ def _iter_entries(progress, date_from="", date_to=""):
                     continue
                 if date_to and date_str > date_to:
                     continue
-
-
                 budget -= 1
                 if budget <= 0:
                     progress["truncated"] = True
@@ -324,8 +314,6 @@ def _summarize(entry):
         "favorite": entry["favorite"],
         "image_count": entry["image_count"],
         "has_thinking": bool(entry["thinking"]),
-
-
         "error": entry["error"][:PREVIEW_CHARS] if entry["error"] else entry["error"],
     }
 
@@ -364,7 +352,6 @@ def list_entries(page=1, per_page=20, search="", date_from="", date_to="",
         if needle and not _matches(entry, needle):
             continue
         records.append(_summarize(entry))
-
 
     if sort_by == "date_asc":
         records.sort(key=lambda r: (r["date"], r["id"]))
@@ -462,7 +449,6 @@ def delete_entry(entry_id, date):
             return False
         day_dir = path.parent
 
-
         prefix = entry_id + "_"
         for child in safe_fs.scan_children(day_dir, want_dir=False):
             name = child.name
@@ -474,7 +460,6 @@ def delete_entry(entry_id, date):
 
         if not safe_fs.unlink_if_regular(path):
             return False
-
 
         root = _history_root()
         parent = day_dir

@@ -2,7 +2,7 @@
 
 A template turns Claude into a prompt writer for one specific image or video model. It knows that model's prompt grammar: how it wants references tagged, whether it reads dialogue in quotes or braces, how an edit should name what changes and what stays. Pick the template for the model you will run next, type your idea in plain words, and the node returns a prompt ready to paste or wire into that model's node.
 
-Version 1.9.0 ships 97 built-in templates. This page covers the families most people use, then the rest in short. The template dropdown always holds the complete list.
+Version 1.9.1 ships 97 built-in templates. This page covers the families most people use, then the rest in short. The template dropdown always holds the complete list.
 
 ## Choosing a template
 
@@ -75,7 +75,7 @@ Repeated edits drift. The edit templates restate what must survive on every pass
 | Seedance 1.5 (Retiring 2026-11-11) | Still runs until the vendor shuts it down. |
 | Seedance 1.0 (Legacy) | The original model. |
 
-Seedance 2.5 keeps your reference wording exactly as you wrote it, in any language. Write "@Image1 is the jacket" and that phrase reaches the model untouched. Give Seedance 2.5 an edit or extension brief and it replies with one line pointing you to Seedance 2.5 Edit instead of a prompt.
+Seedance 2.5 keeps your reference wording exactly as you wrote it, in any language. Write "@Image1 is the jacket" and that phrase reaches the model untouched. When your brief names no tag, it writes the form ByteDance's guide uses: "Image 1", "Video 1", "Audio 1", numbered in upload order ("图片 1" for a brief in Chinese). Give Seedance 2.5 an edit or extension brief and it replies with one line pointing you to Seedance 2.5 Edit instead of a prompt.
 
 ### Kling (Kuaishou)
 
@@ -89,6 +89,8 @@ Seedance 2.5 keeps your reference wording exactly as you wrote it, in any langua
 | Kling O1, Kling 2.6 | Earlier models still in use. Kling 2.1 & 2.5 is legacy. |
 
 Multi-shot is a setting in the Kling node, not something a prompt can switch on. The templates write labelled shots only when you say you have that mode enabled.
+
+Kling O1 and Kling 3.0 Omni tag references as `<<<image_1>>>` and `<<<video_1>>>`, the form ComfyUI's Kling Omni nodes send to Kling. Those nodes also accept `@image1`, but only in lower case. If the prompt goes to Kling's own API or app instead, say so in your brief and the template uses that form (`@image_1` for the API, `@Image1` in the app).
 
 ### Google
 

@@ -37,9 +37,9 @@ A supplied video does not by itself make the task an edit. Check the intent agai
 - Words like "convert", "adjust", "modify" or "change to" do not by themselves make a brief an edit. Do not use "edit", "modify" or "convert the original video" in a generation prompt, and never promise frame-level or pixel-level sameness.
 
 ## Asset Roles
-When the brief itself names a reference, copy that reference expression byte-for-byte every time it appears in the output. This includes Chinese 图片 1 / 图片1 forms, with or without @. Never replace a user-written reference expression with `@ImageN`, translate it, renumber it, or alter its spacing. Explicit user reference expressions take precedence over every default below.
+When the brief itself names a reference, copy that reference expression byte-for-byte every time it appears in the output. This includes Chinese 图片 1 / 图片1 forms, with or without @. Never replace a user-written reference expression with `Image N`, translate it, renumber it, or alter its spacing. Explicit user reference expressions take precedence over every default below.
 
-Only when the brief contains no reference expression for a supplied asset, address it by upload order using the default no-space form `@Image1` / `@Video1` / `@Audio1`. Write a default tag only for a file the user actually supplied; a text-only brief carries no tags. When the brief names a platform whose own documentation uses a different syntax but gives no explicit expression, fal.ai and Replicate may use `[Image1]`, `[Video1]`, `[Audio1]`. Map only opaque raw asset IDs to the default tag form in order of first appearance. A user-written reference expression is not a raw asset ID and is preserved exactly.
+Only when the brief contains no reference expression for a supplied asset, address it by upload order with the vendor's own form: `Image 1` / `Video 1` / `Audio 1`, a capital first letter, one space before the number and no `@`, numbered per type in upload order. A brief written in Chinese takes `图片 1` / `视频 1` / `音频 1` instead. Write a default tag only for a file the user actually supplied; a text-only brief carries no tags. When the brief names a platform whose own documentation uses a different syntax but gives no explicit expression, fal.ai and Replicate may use `[Image1]`, `[Video1]`, `[Audio1]`. Map only opaque raw asset IDs to the default tag form in order of first appearance. A user-written reference expression is not a raw asset ID and is preserved exactly.
 
 Every asset that is used gets one explicit job, stated in the prompt:
 
@@ -49,9 +49,9 @@ Every asset that is used gets one explicit job, stated in the prompt:
 
 Rules that decide the wording:
 
-- One subject per line. Write "Character A references @Image1" and "Character B references @Image2", never "Characters A and B reference Images 1 and 2".
-- State the part of an asset to use and, where it could bleed, the part to ignore: "use @Image1 for her face, hair and coat; do not use its background".
-- When the reference is already accurate, say to follow it instead of re-describing it: "strictly follow the action and camera movement of @Video1, keeping the sequence as shown".
+- One subject per line. Write "Character A references Image 1" and "Character B references Image 2", never "Characters A and B reference Images 1 and 2".
+- State the part of an asset to use and, where it could bleed, the part to ignore: "use Image 1 for her face, hair and coat; do not use its background".
+- When the reference is already accurate, say to follow it instead of re-describing it: "strictly follow the action and camera movement of Video 1, keeping the sequence as shown".
 - When several assets define one subject, say they jointly define ONE entity and name what each contributes, so the model does not produce copies.
 - Mapping priority, highest first: the user's explicit assignment, then the brief's description, then what the asset shows, then filename, then upload order. Never override an explicit assignment.
 - When two identities are equally plausible and nothing in the brief separates them, assign one asset per character in order of first appearance and add no age, relationship or personality that the brief did not state.
@@ -62,8 +62,8 @@ Rules that decide the wording:
 
 ```
 【Unused Assets】
-@Image5 and @Image6 are not used in this task, and not for people, scenes, props, action, camera or sound.
-@Audio2 is not used in this task, and not for dialogue, voice, ambience, sound effects or music.
+Image 5 and Image 6 are not used in this task, and not for people, scenes, props, action, camera or sound.
+Audio 2 is not used in this task, and not for dialogue, voice, ambience, sound effects or music.
 ```
 
 Write that block only when the full set of supplied files is known, and list every number individually. An unused asset is expressed only by that block: it never becomes a `No audio`, `No BGM` or `No subtitles` sentence, and it never silences the prompt's own sound.
@@ -116,10 +116,10 @@ Two paths reach a fixed first or last frame, and the brief decides which one the
 - Dedicated frame roles: the platform (or ComfyUI's separate first-and-last-frame node) marks an image as the first or the last frame. The match is exact, the output takes its frame shape from the first image, and this path cannot be combined with reference images, videos or audio in the same request. On this path the frames are not reference assets: write only the content and motion between them and use no frame tags.
 - Reference mode: the frames travel as ordinary reference images and the prompt designates them. The match is approximate, the frame shape stays free, and other reference roles sit beside them in the same request.
 
-In reference mode write the role as its own sentence, verbatim: `Use @Image1 as the first frame.` and `Use @Image2 as the last frame.` Do not soften these to "reference the opening composition" and do not fold the following action into the same sentence. Add a separate sentence for what that frame defines: composition, subject positions, poses, prop states, scene and camera direction. Every other image keeps its own role beside them, each stated not to change the first-frame or last-frame composition.
+In reference mode write the role as its own sentence, verbatim, in the vendor's own wording: `Image 1 is the first frame.` and `Image 2 is the last frame.` Do not soften these to "reference the opening composition" and do not fold the following action into the same sentence. Add a separate sentence for what that frame defines: composition, subject positions, poses, prop states, scene and camera direction. Every other image keeps its own role beside them, each stated not to change the first-frame or last-frame composition.
 
 ### Keyframes
-When several images fix stages in order, declare the order in the first sentence: `Use @Image1 through @Image6 in order as keyframes.` Then describe each key state image by image, and connect them with continuous action. Keyframes control stage order and visible state; they do not promise frame-by-frame replication or a freeze on any state.
+When several images fix stages in order, declare the order in the first sentence: `Use Image 1 through Image 6 in order as keyframes.` Then describe each key state image by image, and connect them with continuous action. Keyframes control stage order and visible state; they do not promise frame-by-frame replication or a freeze on any state.
 
 ### Storyboards
 A multi-panel storyboard image sets story, shot order and rough composition, and is NOT reproduced panel for panel. Keep it to 15 panels or fewer; past that the result stalls or reorders. State the reading order, and state what not to adopt from the image: sketch style, text annotations, placeholder characters. Fill in everything the panels do not show, which is usually action detail, camera movement, style and sound. When the visuals must follow the source strictly, use keyframes instead of a storyboard. Arrows, boxes and annotation text on a blocking or storyboard diagram are composition guidance, never content.
@@ -202,9 +202,9 @@ For a brief written in Chinese, use the forms in the table below character for c
 
 | Purpose | Form for a Chinese brief | Source |
 |---|---|---|
-| First frame | `@Image1 为首帧。` | vendor predicate + this template's tag policy |
-| First and last frame | `@Image3 为首帧，@Image5 为尾帧。` | vendor predicate + this template's tag policy |
-| Keyframes in order | `以 @Image1 至 @Image6 的顺序作为关键帧。` | vendor predicate + this template's tag policy |
+| First frame | `图片 1 为首帧。` | vendor form |
+| First and last frame | `图片 3 为首帧，图片 5 为尾帧。` | vendor predicate + vendor tag form |
+| Keyframes in order | `以图片 1 至图片 6 的顺序作为关键帧。` | vendor predicate + vendor tag form |
 | No subtitles | `不要字幕。` | vendor form |
 | No BGM | `不要 bgm。` | vendor form |
 | No sound at all | `不要任何声音。` | vendor form |
@@ -216,22 +216,22 @@ For a brief written in Chinese, use the forms in the table below character for c
 "[Subject with defining detail] [main action] in [location]. The visuals are [style or mood]. The camera [shot size, position, movement]. The sound carries [dialogue, ambience, effects or music]."
 
 ### Reference-Driven
-"[Goal sentence: what the video is and what happens]. @Image1 is used for [subject]'s face, hair and clothing; do not use its background. @Video1 is used for [action or camera movement]; do not take its characters or scene. @Audio1 is used for [speaker]'s voice. [Event, from start state through the main action to the end state]. Keep [identities, count, props, spatial relationships, sound relationships] stable throughout."
+"[Goal sentence: what the video is and what happens]. Image 1 is used for [subject]'s face, hair and clothing; do not use its background. Video 1 is used for [action or camera movement]; do not take its characters or scene. Audio 1 is used for [speaker]'s voice. [Event, from start state through the main action to the end state]. Keep [identities, count, props, spatial relationships, sound relationships] stable throughout."
 
 ### Timed Sequence (user-written times only)
 "[Opening summary sentence]. 0-4s: [beat, camera, sound]. 4-10s: [beat, what changes]. 10-15s: [closing beat and end state]. Throughout: [what stays constant]."
 
 ### First and Last Frame
-"Use @Image1 as the first frame. This first frame defines [composition, positions, poses, props, camera direction]. Use @Image2 as the last frame. This last frame defines [the end composition]. [The continuous action that bridges them]. Maintain [identity, prop count, layout, camera direction] from first to last."
+"Image 1 is the first frame. This first frame defines [composition, positions, poses, props, camera direction]. Image 2 is the last frame. This last frame defines [the end composition]. [The continuous action that bridges them]. Maintain [identity, prop count, layout, camera direction] from first to last."
 
 ### Keyframes
-"Use @Image1 through @Image5 in order as keyframes. [Story summary]. @Image1 opens on [state]. @Image2 is the state at the end of the first stage: [state]. [... each in order ...]. The shot passes through these states with continuous action. Throughout, keep [identities, props, layout, lighting, camera axis] consistent."
+"Use Image 1 through Image 5 in order as keyframes. [Story summary]. Image 1 opens on [state]. Image 2 is the state at the end of the first stage: [state]. [... each in order ...]. The shot passes through these states with continuous action. Throughout, keep [identities, props, layout, lighting, camera axis] consistent."
 
 ### Storyboard
-"@Image1 is a [N]-panel storyboard giving shot order and rough composition; read it left to right, top to bottom, and do not adopt its sketch style, annotations or placeholder characters. @Image2 defines [subject]'s appearance. Shot 1: [shot size, action, scene]. Shot 2: [action, camera]. [... to Shot N ...]. The visuals are [style]. The sound carries [dialogue, ambience, music]."
+"Image 1 is a [N]-panel storyboard giving shot order and rough composition; read it left to right, top to bottom, and do not adopt its sketch style, annotations or placeholder characters. Image 2 defines [subject]'s appearance. Shot 1: [shot size, action, scene]. Shot 2: [action, camera]. [... to Shot N ...]. The visuals are [style]. The sound carries [dialogue, ambience, music]."
 
 ### Blockout Render
-"@Video1 is a coarse blockout reference. Take only its action paths, blocking, camera position and movement, cuts and lighting change; do not adopt its blockout look, material or scene. The [grey block] in @Video1 is [Character A]. @Image1 defines [Character A]'s appearance. [Character A] [main action] in [scene]. The visuals are [style]. The sound carries [ambience and effects]."
+"Video 1 is a coarse blockout reference. Take only its action paths, blocking, camera position and movement, cuts and lighting change; do not adopt its blockout look, material or scene. The [grey block] in Video 1 is [Character A]. Image 1 defines [Character A]'s appearance. [Character A] [main action] in [scene]. The visuals are [style]. The sound carries [ambience and effects]."
 
 ## Automatic Corrections
 Fix these silently:
@@ -244,7 +244,7 @@ Fix these silently:
 7. A subject relabelled, or given an age, rank or personality the brief never stated - restore the user's own word and drop what was added
 8. Tags for files the brief never supplied - remove them
 9. Any user-written reference expression changed in text, spacing, language, punctuation, numbering or tag style - restore that expression byte-for-byte every time, including 图片 1, 图片1, @图片 1 and @图片1
-10. Opaque raw asset IDs left in the text - replace only those opaque IDs with `@ImageN` / `@VideoN` / `@AudioN` in order of first appearance; never classify a user-written reference expression as a raw ID
+10. Opaque raw asset IDs left in the text - replace only those opaque IDs with `Image N` / `Video N` / `Audio N` in order of first appearance; never classify a user-written reference expression as a raw ID
 11. A tag with no stated job - give it one explicit role
 12. Several subjects compressed into one range mapping - split into one subject per line
 13. One single-character image used to define two characters who appear together - give each character its own image

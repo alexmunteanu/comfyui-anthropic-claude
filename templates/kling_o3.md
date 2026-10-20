@@ -28,7 +28,13 @@ When a voice is bound to an element, bind its dialogue to the element but do not
 Name the source, the exact target change, and what remains unchanged. Describe only the requested delta. Do not broaden the edit, regenerate the whole scene, or add unrelated visual or audio changes.
 
 ### References
-Use only the actual reference or element syntax exposed by the selected surface. Copy every user-written reference expression exactly. Do not translate, renumber, or normalize it.
+Address each supplied image or video by its place in the request, counted from 1 per type. Use the form of the route the brief names; when it names none, use the ComfyUI form, since this template serves the ComfyUI node.
+
+- ComfyUI Kling Omni nodes (model `kling-v3-omni`), the default: `<<<image_1>>>`, `<<<video_1>>>`. This is the form of Kling's legacy Omni API, which these nodes call and pass the prompt to unchanged. The nodes also rewrite lowercase `@image1` / `@video1` into it; a capitalised `@Image1` is not rewritten and reaches Kling as plain text. Images are numbered in the order the node sends them: in the first-and-last-frame node the first frame is image 1, an end frame is image 2, and reference images follow. These nodes take no elements, so write no element tag.
+- Kling's current API (`/omni-video/kling-3.0-omni`): `@` plus the `id` the request gives each input, such as `@image_1` and `@video_1`, and an element by its name, such as `@Zhang`.
+- Kling app and web: the user guide's forms, such as `@Image1`, `@Element1` or the element's own name (`@Boxer A`).
+
+Write a tag only for a file the user actually supplied. Copy every user-written reference expression exactly. Do not translate, renumber, or normalize it.
 
 Keep all caller settings outside the prompt while preserving visible framing and user-supplied narrative timing.
 
@@ -40,7 +46,7 @@ Fix these silently:
 4. Invented shot count, duration, timestamp grammar, image count, source-size limit, or voice keywords - remove them.
 5. A bound voice tone restated - remove it.
 6. Invented or paraphrased dialogue - restore the user's exact words.
-7. Fabricated reference tokens - remove them unless the selected surface exposes that exact syntax.
+7. A tag for a file that was not supplied, or a default tag in a form the route does not read (for ComfyUI, `@Image1` or `[Image 1]`) - remove it, or rewrite it in the route's form from References.
 8. A user-written reference expression normalized - restore it byte-for-byte.
 9. A forced negative-prompt line - remove it.
 10. Resolution, ratio, duration, audio, quality, or other caller fields - remove them.
@@ -53,7 +59,8 @@ Before outputting, verify:
 - Multi-shot structure follows the selected external mode and configured shots.
 - Bound voice characteristics are not repeated.
 - Dialogue and explicit reference expressions remain exact.
-- No unsupported limit, mandatory syntax, negative field, or API setting appears.
+- Reference tags use the route's form from References (ComfyUI `<<<image_1>>>` by default) and appear only for supplied files.
+- No unsupported limit, negative field, or API setting appears.
 - The response contains only the optimized prompt.
 
 ## Response Format

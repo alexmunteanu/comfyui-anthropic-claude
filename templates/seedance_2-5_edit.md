@@ -31,14 +31,14 @@ Route the brief away from this template when:
 
 When the brief routes away, do not write an edit prompt: the entire output is the single line `Route to the "Seedance 2.5" template.`
 
-When several videos are supplied, the model decides which one to act on from the prompt, so name the master explicitly and once: `@Video1 is the sole editing master.`
+When several videos are supplied, the model decides which one to act on from the prompt, so name the master explicitly and once: `Video 1 is the sole editing master.`
 
 ## Asset Roles
-When the brief itself names a reference, copy that reference expression byte-for-byte every time it appears in the output. This includes Chinese 图片 1 / 图片1 forms, with or without @. Never replace a user-written reference expression with `@ImageN`, translate it, renumber it, or alter its spacing. Explicit user reference expressions take precedence over every default below.
+When the brief itself names a reference, copy that reference expression byte-for-byte every time it appears in the output. This includes Chinese 图片 1 / 图片1 forms, with or without @. Never replace a user-written reference expression with `Image N`, translate it, renumber it, or alter its spacing. Explicit user reference expressions take precedence over every default below.
 
-Only when the brief contains no reference expression for a supplied asset, address it by upload order using the default no-space form `@Image1` / `@Video1` / `@Audio1`. Write a default tag only for a file the user actually supplied; a text-only brief carries no tags. When the brief names a platform whose own documentation uses a different syntax but gives no explicit expression, fal.ai and Replicate may use `[Image1]`, `[Video1]`, `[Audio1]`. Map only opaque raw asset IDs to the default tag form in order of first appearance. A user-written reference expression is not a raw asset ID and is preserved exactly.
+Only when the brief contains no reference expression for a supplied asset, address it by upload order with the vendor's own form: `Image 1` / `Video 1` / `Audio 1`, a capital first letter, one space before the number and no `@`, numbered per type in upload order. A brief written in Chinese takes `图片 1` / `视频 1` / `音频 1` instead. Write a default tag only for a file the user actually supplied; a text-only brief carries no tags. When the brief names a platform whose own documentation uses a different syntax but gives no explicit expression, fal.ai and Replicate may use `[Image1]`, `[Video1]`, `[Audio1]`. Map only opaque raw asset IDs to the default tag form in order of first appearance. A user-written reference expression is not a raw asset ID and is preserved exactly.
 
-- `@Video1` is the source being edited or extended, and its role is stated as such.
+- `Video 1` is the source being edited or extended, and its role is stated as such.
 - Images supply replacement or added elements: state the structure, material or appearance to take, and the part to ignore ("do not use its background or the person in it").
 - Audio supplies a replacement voice, ambience, effect or music, bound to a named speaker or sound category.
 
@@ -46,7 +46,7 @@ Every used asset gets exactly one job, one subject per line. When a supplied ass
 
 ```
 【Unused Assets】
-@Image4 is not used in this task, and not for people, scenes, props, action or camera.
+Image 4 is not used in this task, and not for people, scenes, props, action or camera.
 ```
 
 If the user has already assigned an image to an edit target, do not add a second unnamed image to the same target because it looks clearer or similar. It goes in the unused block.
@@ -79,29 +79,29 @@ Long enough to name every changed thing and close the scope, and no longer. Once
 ## Editing
 An edit changes named things and leaves everything else exactly as it is.
 
-**The master.** One supplied video governs, and the prompt says so: `@Video1 is the sole editing master and governs the scene, camera position, camera movement, action paths, occlusion and event order.`
+**The master.** One supplied video governs, and the prompt says so: `Video 1 is the sole editing master and governs the scene, camera position, camera movement, action paths, occlusion and event order.`
 
 **The scope.** Every visible category of subject in the source is accounted for as replaced, removed or kept: named characters and unnamed ones, real people, models, animals, props, foreground objects, background subjects. State the count of the target after the edit.
 
 **The closure.** One of these two sentences ends the scope, always, never omitted:
 
-- Local change: `Except for the objects explicitly modified above, all other visible characters, props and background elements in @Video1 remain unchanged and are not to be replaced or removed.`
-- Keep-only-these: `Except for the objects explicitly retained above, remove all other visible subjects from @Video1; do not add any unspecified objects.`
+- Local change: `Except for the objects explicitly modified above, all other visible characters, props and background elements in Video 1 remain unchanged and are not to be replaced or removed.`
+- Keep-only-these: `Except for the objects explicitly retained above, remove all other visible subjects from Video 1; do not add any unspecified objects.`
 
 Then the inheritance, when a moving subject is replaced:
 
-> `[Target]` inherits the timing, duration, path, speed and occlusion of every appearance, movement and exit of `[original]`. All other character action, camera movement, shot changes and event order remain as in `@Video1`.
+> `[Target]` inherits the timing, duration, path, speed and occlusion of every appearance, movement and exit of `[original]`. All other character action, camera movement, shot changes and event order remain as in `Video 1`.
 
 **Motion-slot replacement** is the reliable form for swapping one moving subject for another across categories: remove the original explicitly, have the target fill the original's slot at exactly the same appearance timing, path, speed and occlusion positions, and state that the original no longer appears in the final video.
 
-A timestamp scopes a partial edit: "from 4 to 6 seconds in @Video1, ... and leave the rest unchanged." Only use ranges the source actually supports; do not reconstruct the source's timeline from memory, and do not invent event conditions from a few sampled frames. A prompt raises the odds that key events keep the original timing; it cannot promise frame-by-frame alignment.
+A timestamp scopes a partial edit: "from 4 to 6 seconds in Video 1, ... and leave the rest unchanged." Only use ranges the source actually supports; do not reconstruct the source's timeline from memory, and do not invent event conditions from a few sampled frames. A prompt raises the odds that key events keep the original timing; it cannot promise frame-by-frame alignment.
 
 Keep the preservation list short and specific. A long list of everything that must not change dilutes the edit goal; the master-inheritance sentence already covers the rest.
 
 ## Audio Editing
 An audio edit changes sound and nothing else. Name the speaker or the sound category, the change, the time range if it is partial, and what stays.
 
-- The master still governs: `@Video1 is the sole editing master and governs the visuals, character action, lip-sync timing, shots, editing rhythm, all other audio and event order.`
+- The master still governs: `Video 1 is the sole editing master and governs the visuals, character action, lip-sync timing, shots, editing rhythm, all other audio and event order.`
 - Change one thing: one speaker's line, one language, one voice, the background music, the ambience, or one action effect.
 - Give a replacement line in full, quoted, with the language and delivery beside it: `change the man's line to "Don't come over here", in an American English accent`. Never paraphrase the new line or leave it to be inferred.
 - State the preservation explicitly: all other dialogue, lip-sync timing, ambience, action effects, visuals, shots and cutting rhythm stay as in the source.
@@ -131,7 +131,7 @@ When extra reference assets are supplied, give each its role first, then state t
 ## Seamless Transition
 Two supplied videos with the missing middle generated between them: name both, state where the transition starts, the camera action that carries it, and what transforms into what. Close with an instruction not to alter either supplied video.
 
-"Seamlessly connect @Video1 and @Video2. At the end of @Video1, [camera action]. During the transition, [what transforms into what]. Do not alter the two uploaded videos themselves."
+"Seamlessly connect Video 1 and Video 2. At the end of Video 1, [camera action]. During the transition, [what transforms into what]. Do not alter the two uploaded videos themselves."
 
 ## Output Language
 Write the prompt in the language the brief is written in. An English brief takes every sentence this template mandates exactly as given at its own site, so nothing below changes it.
@@ -151,31 +151,31 @@ The task trigger is the one part the brief's language does not decide. Where the
 |---|---|---|
 | Extension triggers | `向前延长` / `向后延长` / `延续` / `续写` | vendor form |
 | Edit verbs, the vendor's own examples | `加` / `修改` / `删掉` | vendor form |
-| Seamless transition | `将 @Video1 和 @Video2 无缝衔接起来。` | vendor predicate + this template's tag policy |
+| Seamless transition | `将视频 1 和视频 2 无缝衔接起来。` | vendor predicate + vendor tag form |
 | Closure tail, the "everything else unchanged" clause | `其余均保持不变。` | vendor form |
 
 ## Prompt Skeletons
 
 ### Replace a Subject
-"Edit @Video1, replacing only [original subject, with its position in frame] with [target, defined by @Image1]. @Video1 is the sole editing master and governs the scene, camera position, camera movement, action paths, occlusion and event order. @Image1 is used only for [structure, color and material]; do not use its background. There is exactly one [target] throughout. [Target] fills [original]'s slot at the same appearance timing, path, speed and occlusion positions, and [original] no longer appears. Except for the objects explicitly modified above, all other visible characters, props and background elements in @Video1 remain unchanged and are not to be replaced or removed."
+"Edit Video 1, replacing only [original subject, with its position in frame] with [target, defined by Image 1]. Video 1 is the sole editing master and governs the scene, camera position, camera movement, action paths, occlusion and event order. Image 1 is used only for [structure, color and material]; do not use its background. There is exactly one [target] throughout. [Target] fills [original]'s slot at the same appearance timing, path, speed and occlusion positions, and [original] no longer appears. Except for the objects explicitly modified above, all other visible characters, props and background elements in Video 1 remain unchanged and are not to be replaced or removed."
 
 ### Add or Remove
-"Edit @Video1, adding [element with its appearance] at [where in frame, and when]. @Video1 is the sole editing master and governs the scene, camera, action and event order. Except for the objects explicitly modified above, all other visible characters, props and background elements in @Video1 remain unchanged and are not to be replaced or removed."
+"Edit Video 1, adding [element with its appearance] at [where in frame, and when]. Video 1 is the sole editing master and governs the scene, camera, action and event order. Except for the objects explicitly modified above, all other visible characters, props and background elements in Video 1 remain unchanged and are not to be replaced or removed."
 
 ### Scoped Change
-"Edit @Video1: from [start] to [end] seconds, change [named element] from [A] to [B], and leave the rest of the content unchanged. @Video1 is the sole editing master. Except for the objects explicitly modified above, all other visible characters, props and background elements in @Video1 remain unchanged and are not to be replaced or removed."
+"Edit Video 1: from [start] to [end] seconds, change [named element] from [A] to [B], and leave the rest of the content unchanged. Video 1 is the sole editing master. Except for the objects explicitly modified above, all other visible characters, props and background elements in Video 1 remain unchanged and are not to be replaced or removed."
 
 ### Style or Attribute Change
-"Edit @Video1, changing [the style, lighting, material or color of the named element] to [target]. @Video1 is the sole editing master and governs composition, camera position, camera movement, action paths and event order. Keep the subjects, their count and the action rhythm as in @Video1. Except for the objects explicitly modified above, all other visible characters, props and background elements in @Video1 remain unchanged and are not to be replaced or removed."
+"Edit Video 1, changing [the style, lighting, material or color of the named element] to [target]. Video 1 is the sole editing master and governs composition, camera position, camera movement, action paths and event order. Keep the subjects, their count and the action rhythm as in Video 1. Except for the objects explicitly modified above, all other visible characters, props and background elements in Video 1 remain unchanged and are not to be replaced or removed."
 
 ### Audio Edit
-"Edit @Video1, changing only [speaker or sound category] [in the whole video, or from X to Y seconds]. @Video1 is the sole editing master and governs the visuals, character action, lip-sync timing, shots, editing rhythm, all other audio and event order. [The change, with language and delivery if it is speech.] Keep all other dialogue, lip-sync timing, ambience, action sound effects, visuals, shots and cutting rhythm from @Video1 unchanged."
+"Edit Video 1, changing only [speaker or sound category] [in the whole video, or from X to Y seconds]. Video 1 is the sole editing master and governs the visuals, character action, lip-sync timing, shots, editing rhythm, all other audio and event order. [The change, with language and delivery if it is speech.] Keep all other dialogue, lip-sync timing, ambience, action sound effects, visuals, shots and cutting rhythm from Video 1 unchanged."
 
 ### Forward Extension
-"@Video1 is the source video to extend forward. Extend @Video1 forward. The first frame of the extended segment continues directly from the final frame of @Video1: hold [subject posture and orientation], [prop positions], [background and spatial relationships], [camera position and composition], [lighting] and [audio state]. Then [the new action or event, ending in an observable state]. Throughout the extension, maintain [identity and clothing], [key props], [background layout], [camera axis] and [the original ambience]. The same subject remains one continuous object throughout, without duplication or splitting, with body structure and part count stable."
+"Video 1 is the source video to extend forward. Extend Video 1 forward. The first frame of the extended segment continues directly from the final frame of Video 1: hold [subject posture and orientation], [prop positions], [background and spatial relationships], [camera position and composition], [lighting] and [audio state]. Then [the new action or event, ending in an observable state]. Throughout the extension, maintain [identity and clothing], [key props], [background layout], [camera axis] and [the original ambience]. The same subject remains one continuous object throughout, without duplication or splitting, with body structure and part count stable."
 
 ### Backward Extension
-"@Video1 is the source video to extend backward. Extend @Video1 backward. Before the source begins, [the preceding action or event]. The final frame of the extended segment connects naturally to the first frame of @Video1: keep [subject posture and orientation], [prop positions], [background and spatial relationships], [camera position and composition], [lighting] and [audio state] consistent. Throughout the extension, maintain [identity and clothing], [key props], [background layout] and [camera axis]. The same subject remains one continuous object throughout, without duplication or splitting. Characters, props or effects that belong only to later parts of @Video1 must not appear early."
+"Video 1 is the source video to extend backward. Extend Video 1 backward. Before the source begins, [the preceding action or event]. The final frame of the extended segment connects naturally to the first frame of Video 1: keep [subject posture and orientation], [prop positions], [background and spatial relationships], [camera position and composition], [lighting] and [audio state] consistent. Throughout the extension, maintain [identity and clothing], [key props], [background layout] and [camera axis]. The same subject remains one continuous object throughout, without duplication or splitting. Characters, props or effects that belong only to later parts of Video 1 must not appear early."
 
 ## Automatic Corrections
 Fix these silently:
@@ -201,7 +201,7 @@ Fix these silently:
 20. An extension that also edits the source - keep the extension, drop the edit, or split into two steps
 21. A boundary subject relabeled with a profession or role the brief never gave - restore the user's own word
 22. Any user-written reference expression changed in text, spacing, language, punctuation, numbering or tag style - restore that expression byte-for-byte every time, including 图片 1, 图片1, @图片 1 and @图片1
-23. Opaque raw asset IDs - replace only those opaque IDs with `@VideoN` / `@ImageN` / `@AudioN` in order of first appearance; never classify a user-written reference expression as a raw ID
+23. Opaque raw asset IDs - replace only those opaque IDs with `Video N` / `Image N` / `Audio N` in order of first appearance; never classify a user-written reference expression as a raw ID
 24. Supplied assets left with no job - add the `【Unused Assets】` block listing each number
 25. A second unnamed image attached to a target the user already assigned - move it to the unused block
 26. A promise of frame-level or pixel-level sameness - remove it

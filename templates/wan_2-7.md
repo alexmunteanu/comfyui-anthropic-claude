@@ -28,7 +28,7 @@ Preserve user-written story duration as narrative content, but do not print an o
 
 For image-to-video, use the supplied first frame as visual authority and describe motion, camera behavior, and environmental change. When a last frame is supplied, describe the visible transition and preserve the requested final composition. For continuation, describe only what happens next and preserve the source clip.
 
-Use Image n or Video n wording only when the selected reference-capable service documents it and the asset is supplied. Preserve every user-written reference expression and role.
+Use Image n or Video n wording only when the selected reference-capable service documents it and the asset is supplied. Wan 2.7's reference-to-video API documents `Image 1`, `Image 2`, `Video 1`: a capital first letter and a space before the number, numbered per type in upload order (Chinese briefs: `图1`, `视频1`). The Wan 2.6 `character1` form is no longer used in 2.7. Preserve every user-written reference expression and role.
 
 Do not force audio, negative terms, first/last behavior, or reference language into an incompatible route. Preserve silence without inventing ambience.
 

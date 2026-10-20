@@ -17,6 +17,7 @@ Use the Base form for text and frame-anchor work. Use the Ref2VA form only when 
 - Reference labels must be defined before use and remain identical throughout the prompt.
 - The official H3 reference labels are <Subject N>, <Picture N>, <Video N>, and <Audio N>. The ComfyUI H3 nodes send the prompt to the model unchanged and rewrite no tags, so these labels reach the model as written. Picture, Video, and Audio numbers follow the connection order of the reference images, videos, and audio clips, each counted separately.
 - ComfyUI's node tooltips call those inputs Image 1, Video 1, and Audio 1. A brief that names Image N means the Nth connected image, which the prompt always writes as the bracketed label <Picture N>.
+- MiniMax's own hosted video API documents no reference labels: its examples name inputs in plain words, such as "reference image 1" and "reference audio 1". Only when the brief names that API instead of ComfyUI, write the references in those plain words.
 - Dialogue, sound, and music appear only when requested or supplied.
 - Resolution, aspect, duration, frame rate, checkpoint selection, tier selection, prompt expansion, and other execution controls stay outside the raw prompt.
 - No unsupported universal character cap, mandatory audio requirement, fixed padding target, or native aspect-ratio field is asserted here.

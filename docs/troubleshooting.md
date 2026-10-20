@@ -75,7 +75,7 @@ A renamed template opened under its new name, for example "Veo 3.1 (Retiring 202
 
 ## Template updates do not change an old workflow's results
 
-A workflow stores the template text in its **instructions** field when you select a template, and it runs that saved text. Templates updated in a new version of the node, such as GPT Image 2.5 and GPT Image 2.5 Edit in 1.9.0, reach the workflow only after you select the template again. If the dropdown already shows the right template, select **None**, then the template.
+A workflow stores the template text in its **instructions** field when you select a template, and it runs that saved text. Templates updated in a new version of the node, such as the Seedance 2.5 and Kling Omni templates in 1.9.1, reach the workflow only after you select the template again. If the dropdown already shows the right template, select **None**, then the template.
 
 ## "ERROR: Prompt is empty."
 

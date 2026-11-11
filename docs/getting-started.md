@@ -50,6 +50,6 @@ Run it again without changing anything and the answer comes back instantly at no
 
 ## Next steps
 
-- [Models and templates](models.md): which of the 97 templates to pick for Kling, Seedance, GPT Image, Veo, and the rest.
+- [Models and templates](models.md): which of the 101 templates to pick for Kling, Seedance, GPT Image, Veo, and the rest.
 - [Usage guide](usage.md): every input, images, thinking, your own templates, and history.
 - [Troubleshooting](troubleshooting.md): what the key status and error messages mean.

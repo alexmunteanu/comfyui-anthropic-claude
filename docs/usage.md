@@ -1,6 +1,6 @@
 # Usage guide
 
-Reference for every input, output, and panel on the Anthropic Claude node, version 1.9.1.
+Reference for every input, output, and panel on the Anthropic Claude node, version 1.10.0.
 
 ## Inputs
 

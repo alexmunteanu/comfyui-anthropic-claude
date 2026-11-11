@@ -2,7 +2,7 @@
 
 A template turns Claude into a prompt writer for one specific image or video model. It knows that model's prompt grammar: how it wants references tagged, whether it reads dialogue in quotes or braces, how an edit should name what changes and what stays. Pick the template for the model you will run next, type your idea in plain words, and the node returns a prompt ready to paste or wire into that model's node.
 
-Version 1.9.1 ships 97 built-in templates. This page covers the families most people use, then the rest in short. The template dropdown always holds the complete list.
+Version 1.10.0 ships 101 built-in templates. This page covers the families most people use, then the rest in short. The template dropdown always holds the complete list.
 
 ## Choosing a template
 
@@ -39,11 +39,21 @@ The default pick for general image work. Every Nano Banana template has a matchi
 
 | Template | Use it for |
 | --- | --- |
-| GPT Image 2.5 | New images with either GPT Image 2.5 model. Exact on-screen text goes in quotation marks. |
+| GPT Image 2.6 | New still images with either GPT Image 2.6 model. Exact on-screen text goes in quotation marks. |
+| GPT Image 2.6 Edit | Edits with either GPT Image 2.6 model, including markup edits: circle or mark the spot on the first image and say what to change there. |
+| GPT Image 2.6 GIF | Short looping animations for the OpenAI GPT Image 2.6 GIF node. |
+| GPT Image 2.6 SVG | Logos, icons and simple vector graphics for the OpenAI GPT Image 2.6 SVG node. |
+| GPT Image 2.5 | New images with either GPT Image 2.5 model. |
 | GPT Image 2.5 Edit | Edits with either GPT Image 2.5 model that must protect identity, layout, labels, and lighting. One material change per pass. |
-| GPT Image 2 / GPT Image 2 Edit | The previous generation, still widely used. |
+| GPT Image 2 / GPT Image 2 Edit | An earlier generation, still widely used. |
 
-GPT Image 2.5 comes as two models, Flare and Sunburst, and both create and edit images. They take the same prompts, so one template serves both: choose the model on the OpenAI GPT Image 2.5 node. Flare is faster; Sunburst is slower with higher image quality and is OpenAI's pick when editing precision matters most. Templates named "GPT Image 2.5 Flare" and "GPT Image 2.5 Sunburst Edit" in older workflows open as these two.
+GPT Image 2.6 (released 2026-11-04) comes as two models, Flare and Sunburst. They take the same prompts, so each template serves both: choose the model on the node. Flare is the faster model; Sunburst is OpenAI's pick for more detail or precise edits. The GPT Image 2.6 nodes need ComfyUI 0.44.1 or later.
+
+**Markup edits.** On the OpenAI GPT Image 2.6 node, connect a drawing over the first reference image to `markup` and its mask to `markup_alpha`. In your brief, say what the mark looks like ("the vase inside the red circle"). The prompt then names that object and asks for the mark to be removed from the result. Markup works only on the first image; other images count as references.
+
+**GIF and SVG.** These come from their own nodes and take a text prompt only. Frame count, frame length and size are node settings; the prompt describes the subject, its starting pose and its motion. The SVG prompt describes a flat mark with clean shapes and a strong silhouette.
+
+GPT Image 2.5 also comes as Flare and Sunburst, both creating and editing. Templates named "GPT Image 2.5 Flare" and "GPT Image 2.5 Sunburst Edit" in older workflows open as "GPT Image 2.5" and "GPT Image 2.5 Edit".
 
 Repeated edits drift. The edit templates restate what must survive on every pass, but no prompt can promise pixel-identical areas, so composite the final result when an exact region matters.
 

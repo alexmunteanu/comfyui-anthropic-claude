@@ -1,6 +1,6 @@
 # Anthropic Claude for ComfyUI
 
-Describe the shot you want in plain words, pick the model you will render with, and Claude writes the prompt in that model's own language. The node ships 97 templates for image and video models, current and earlier, including Nano Banana, GPT Image, Seedance, Kling, Veo, Wan, FLUX, and Seedream.
+Describe the shot you want in plain words, pick the model you will render with, and Claude writes the prompt in that model's own language. The node ships 101 templates for image and video models, current and earlier, including Nano Banana, GPT Image, Seedance, Kling, Veo, Wan, FLUX, and Seedream.
 
 ![The Anthropic Claude node in ComfyUI](./node.png)
 

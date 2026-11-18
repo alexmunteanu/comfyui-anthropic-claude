@@ -2,7 +2,7 @@
 
 A template turns Claude into a prompt writer for one specific image or video model. It knows that model's prompt grammar: how it wants references tagged, whether it reads dialogue in quotes or braces, how an edit should name what changes and what stays. Pick the template for the model you will run next, type your idea in plain words, and the node returns a prompt ready to paste or wire into that model's node.
 
-Version 1.10.0 ships 101 built-in templates. This page covers the families most people use, then the rest in short. The template dropdown always holds the complete list.
+Version 1.11.0 ships 102 built-in templates. This page covers the families most people use, then the rest in short. The template dropdown always holds the complete list.
 
 ## Choosing a template
 
@@ -62,6 +62,8 @@ Repeated edits drift. The edit templates restate what must survive on every pass
 **FLUX 3 Image** and **FLUX 3 Image Edit** cover the current generation. **FLUX.2** and **FLUX.2 Edit** cover the earlier one, which many local workflows still run.
 
 ### Seedream (ByteDance)
+
+**Seedream 5.5** is the newest model. One template covers new images and edits: it writes an edit instruction when your brief changes a supplied image, and a full description otherwise. Refer to supplied images as Image 1, Image 2, and so on, in the order they are connected. Seedream 5.5 can return images with a transparent background: ask for one in your brief, for example "a sticker on a transparent background", and set the background on the node. Picture size, background mode and layer count are node settings. Seedream 5.5 is the "seedream 5.5" option of the ByteDance Seedream 4.5, 5.0 & 5.5 node, which needs ComfyUI 0.45.0 or later.
 
 **Seedream 5.0 Pro** for top quality, **Seedream 5.0 Flash** for speed, and **Seedream 5.0 / Lite** with its Edit template. The 4.0 and 4.5 templates remain as legacy.
 

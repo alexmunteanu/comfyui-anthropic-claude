@@ -1,31 +1,32 @@
-# v1.10.0
-2026-11-11
+# v1.11.0
+2026-11-18
 
-Four new templates for OpenAI GPT Image 2.6, released 2026-11-04.
+A new template for ByteDance Seedream 5.5.
 
 ## Why
-GPT Image 2.6 adds markup-guided edits, a planning "complexity" setting, animated GIF output and SVG output. ComfyUI 0.45.0 ships an "OpenAI GPT Image 2.6" node plus separate GIF and SVG nodes, and OpenAI's guide gives GIF and SVG their own prompting rules.
+Seedream 5.5 (Dola Seedream 5.5) is ByteDance's newest image model and the successor to Seedream 5.0 Pro. ComfyUI 0.45.0 (2026-11-10) added it as the "seedream 5.5" option of the "ByteDance Seedream 4.5, 5.0 & 5.5" node. It adds native transparent (RGBA) images, layer splits of up to 99 layers and steadier multi-turn edits.
 
 ## Added
-- **GPT Image 2.6**: new still images with gpt-image-2.6-flare or gpt-image-2.6-sunburst (one prompting method, so one template serves both).
-- **GPT Image 2.6 Edit**: edits, including markup edits. When the brief says a mark is drawn on the first image, the prompt names the object through that mark ("the vase inside the red circle") and asks for the mark to be removed from the result. Without markup, no mark is mentioned. Markup and a mask are never combined.
-- **GPT Image 2.6 GIF**: short animations. By default the motion starts from a pose, returns to it and ends with "Make the motion loop smoothly."; a brief that asks for a one-shot gets its final state instead. Frame count, frame length and size stay node settings.
-- **GPT Image 2.6 SVG**: logos, icons and simple graphics in OpenAI's vector wording (clean, vector-like shapes, a strong silhouette, balanced negative space, flat design, no gradients unless essential).
+- **Seedream 5.5**: one template for new images and for edits. BytePlus documents a single model and one prompting workflow for both.
+  - Model ids: BytePlus `dola-seedream-5-5-261028`, Volcengine `doubao-seedream-5-5-261028`, ComfyUI `seedream-5-5-261028`.
+  - Reference images are named Image 1, Image 2 and so on, in the order supplied (up to 10), each with its role.
+  - An edit names the change, then ends with a "Preserve ..." sentence listing what stays unchanged, the form BytePlus uses. A follow-up edit carries the earlier changes into that sentence.
+  - A transparent background is written into the prompt only when the brief asks for one. A glass or acrylic object is described as a material.
+  - Exact in-image text goes in double quotes with its placement.
+  - Size, background mode, layer count, seed and watermark stay node settings. Sequences, web search and streaming are not offered for 5.5.
 
 ## Changed
-- GPT Image 2.5 Edit: the same markup rules (OpenAI documents markup for 2.5, and the ComfyUI 2.6 node offers it for the 2.5 models).
-- GPT Image 2.5, 2.5 Edit, 2 and 2 Edit: point to the 2.6 templates; the renamed "OpenAI GPT Image 2.5" node is no longer named.
-- 101 built-in templates (was 97). User docs in docs/v1.10.0.
+- 102 built-in templates (was 101). User docs in docs/v1.11.0 (models page and troubleshooting list).
+- The global `/prompt_enhance` skill was rebuilt from this version: 96 templates and 96 `/pe-*` commands, including `/pe-seedream-5-5`.
 
 ## Verification
-- 191 Python tests (21 new, each key rule with a mutation control) and 82 JavaScript tests pass.
-- Live Claude Sonnet 5.5 check through the shipped node: 9 of 9 cases pass on every sample (two per new template, a markup and a no-markup edit, a loop and a one-shot GIF, plus a GPT Image 2.5 Edit markup case). USD 0.1131 of the approved USD 0.30. Two first-round misses were checker errors (a paraphrased return-to-start; a correct flat-facet translation of "texture"); the checkers were corrected, re-proved against their mutants and the saved answers re-scored with no new calls.
-- Runtime: template list, load and validation 7.18 ms against v1.9.1's 6.56 ms (56.56 ms ceiling).
+- 198 Python tests (7 new, each key rule with a mutation control) and 82 JavaScript tests pass on the final files.
+- Live check through the shipped node on Claude Sonnet 5.5: 6 of 6 cases pass on every sample, USD 0.0655 of the approved USD 0.30. The cases were plain generation, three references, poster text, a transparent sticker, a single-image edit, and a brief that never mentions the background. One first-round miss was a checker error: "wash transparency" inside a watercolor style matched a pattern that was too broad. The pattern now targets transparent-background requests, was re-proved against its mutants, and the saved answers were re-scored with no new calls.
+- Run: 20261118-124655-426dd187.
 
 ## Notes
-- The GPT Image 2.6 nodes need ComfyUI 0.44.1 or later.
-- Not checked: the template picker inside a running ComfyUI page (this version is not installed there; installation is manual). The picker code is unchanged and lists templates from the registry the tests cover.
-- Workflows store template text in their instructions field, so updated 2.5 text reaches an old workflow after the template is selected again.
-- Release packaging must ship README.md, node.png and docs/ from docs/v1.10.0.
-
-Run: 20261111-130918-a82eab53
+- The Seedream 5.5 option needs ComfyUI 0.45.0 or later.
+- Not checked: the template picker inside a running ComfyUI page. This version is not installed there, because installation is manual. The picker code is unchanged and lists templates from the registry the tests cover.
+- Runtime was not re-measured. The change adds one entry to the template list, an effect too small to notice.
+- A template audit on 2026-11-18 found 27 other templates with an out-of-date fact. They are listed in the run's stale_audit.md and are not changed in this version.
+- Release packaging must ship README.md, node.png and docs/ from docs/v1.11.0.
